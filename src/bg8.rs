@@ -10,7 +10,7 @@ impl Vertex8 {
     }
     pub fn getvn(&self) -> u8 { self.vertnum }
  
-    // adds new edgevert number
+    // adds new edgevert number (0x00 since no connections made)
     pub fn push_new_ev(&mut self) { self.edgevert.push(0x00) }
 
     pub fn get_ev_size(&self) -> usize { self.edgevert.len() }
