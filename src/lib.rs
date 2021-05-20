@@ -1,6 +1,6 @@
 mod itb;
 mod bg8;
-use crate::bg8::*;
+use crate::bg8::bit_graph8::*;
 
 #[cfg(test)]
 mod tests {
@@ -12,6 +12,15 @@ mod tests {
         assert_eq!(0, my_bg8.size());
     }
 
+    #[test]
+    fn simple_connect() {
+        let mut my_bg8: BitGraph8 = BitGraph8::new();
+        my_bg8.addv();
+        my_bg8.addv();
+        my_bg8.connect(0, 1);
+
+    }
+/*
     #[test] // gaurentees the correct size of each 
     fn edgevert_test() {
         let mut my_bg8: BitGraph8 = BitGraph8::new();
@@ -25,6 +34,7 @@ mod tests {
                 _v.get_ev_size()
             );
         }
+
         // Post addition of max elements
         // all should have the same amount
         for i in 0..256 {
@@ -32,7 +42,7 @@ mod tests {
             assert_eq!(32, _v.get_ev_size());
         }
     }
-
+*/
     #[test] // Tests for adding/getting up to 255 elements
     fn large_addv_getv_bg8() {
         let mut my_bg8: BitGraph8 = BitGraph8::new();
