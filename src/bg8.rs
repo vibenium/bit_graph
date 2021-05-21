@@ -41,7 +41,7 @@ pub mod bit_graph8 {
     
     #[derive(Debug)]
     pub struct BitGraph8 {
-        // WARNING: cannot exceed 255 elements
+        // WARNING: cannot exceed 256 (0..=255) elements
         vertices: Vec<Vertex8>,
     }
 
@@ -64,8 +64,6 @@ pub mod bit_graph8 {
 
         // gets a Vertex8 (ONLY FOR DEBUGGING)
         // pub fn getv8(&self, idx: usize) -> Vertex8 { self.vertices[idx].clone() }
-
-        
 
         pub fn connect(&mut self, source: usize, dest: usize) {
             if source < self.vertices.len() && dest < self.vertices.len() {

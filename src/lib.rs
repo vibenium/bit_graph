@@ -12,10 +12,18 @@ mod tests {
         assert_eq!(0, my_bg8.size());
     }
 
-    #[test]
+    #[test] // 0->1, 1->2, 2->3, ..., 254->255
     fn simple_connect2() {
         let mut my_bg8: BitGraph8 = BitGraph8::new();
-        
+        for _ in 0..256 {
+            my_bg8.addv();
+        }
+        for i in 0..255 {
+            my_bg8.connect(i, i + 1);
+        }
+        for i in 0..255 {
+            assert!(my_bg8.is_connected(i, i + 1));
+        }
     }
 
     #[test] // 0->1 and 1->0
