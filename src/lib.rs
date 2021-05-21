@@ -13,12 +13,20 @@ mod tests {
     }
 
     #[test]
-    fn simple_connect() {
+    fn simple_connect2() {
+        let mut my_bg8: BitGraph8 = BitGraph8::new();
+        
+    }
+
+    #[test] // 0->1 and 1->0
+    fn simple_connect1() {
         let mut my_bg8: BitGraph8 = BitGraph8::new();
         my_bg8.addv();
         my_bg8.addv();
         my_bg8.connect(0, 1);
-
+        assert!(my_bg8.is_connected(0, 1));
+        my_bg8.connect(1, 0);
+        assert!(my_bg8.is_connected(1, 0));
     }
 /*
     #[test] // gaurentees the correct size of each 

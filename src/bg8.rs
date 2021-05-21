@@ -8,14 +8,7 @@
 */
 
 
-pub mod bit_graph8 {
-    
-    mod auxf { // auxiliary functions
-        pub fn bitnum_eq(to: u8) -> u8 { (to % 4) * 2 + 2 }
-        pub fn ev_idx_eq(to: u8) -> usize { to as usize / 4 }
-        pub fn vertbit_init(num: u8) -> u8 { (1 << (num - 1)) | (1 << (num - 2)) }
-    }
-    
+pub mod bit_graph8 {    
     #[derive(Debug, Clone)]
     struct Vertex8 {
         vertnum: u8,
@@ -41,13 +34,8 @@ pub mod bit_graph8 {
             }
         }
 
-        pub fn connect(&mut self, bitnum: u8, ev_idx: usize) {
-            // Bellow is an example of edgevert from the perspective
-            // of bits and the corresponding vertices
-            // bitnum =>    8 6 4 2                  8 6 4 2 
-            // edgevert[1]: 01100100    edgevert[0]: 11000000
-            //              7w6w5w4w                 3w2w1w0w
-            self.edgevert[ev_idx] |= auxf::vertbit_init(bitnum);    
+        pub fn connect_to(&mut self, bitnum: usize) {
+            self.edgevert[bitnum / 8] |= 1 << (bitnum % 8);    
         }
     }
     
@@ -66,45 +54,32 @@ pub mod bit_graph8 {
         pub fn getv(&self, idx: usize) -> u8 { self.vertices[idx].getvn() }
         
         // Only going out one 
-        // pub fn is_connected(&self, from: u8, to: u8) -> bool {
-        //     // pub fn bitnum_eq(to: u8) -> u8 { (to % 4) * 2 + 2 }
-        //     // pub fn ev_idx_eq(to: u8) -> usize { to as usize / 4 }
-        //     if from < self.vertices.len() && to < self.vertices.len() {
-        //         let bitnum: u8 = auf::bitnum_eq(to);
-        //         let ev_idx: usize = auf::ev_idx_eq(to);
-        //         let mask: u8 = auxf::vertbit_init(bitnum);
-                
-        //     } else { false }
-        // }
+        pub fn is_connected(&self, source: usize, dest: usize) -> bool {
+            if source < self.vertices.len() && dest < self.vertices.len() {                
+                (self.vertices[source].getev(dest / 8) & (1 << (dest % 8))) != 0
+            } else { 
+                false 
+            }
+        }
 
         // gets a Vertex8 (ONLY FOR DEBUGGING)
         // pub fn getv8(&self, idx: usize) -> Vertex8 { self.vertices[idx].clone() }
 
         
 
-        pub fn connect(&mut self, from: u8, to: u8) { 
-            // check if both indices are in bound
-            if usize::from(from) < self.vertices.len() && usize::from(to) < self.vertices.len() {
-                // bitnum =>    8 6 4 2                  8 6 4 2 
-                // edgevert[1]: 01100100    edgevert[0]: 11000000
-                //              7w6w5w4w                 3w2w1w0w
-                // 'from' is a vertnum and 'to' is the bit position
-                let bitnum: u8 = auxf::bitnum_eq(to); 
-                let ev_idx: usize = auxf::ev_idx_eq(to); // the array to use 
-                self.vertices[from as usize].connect(bitnum, ev_idx);
+        pub fn connect(&mut self, source: usize, dest: usize) {
+            if source < self.vertices.len() && dest < self.vertices.len() {
+                self.vertices[source].connect_to(dest);
             } else {
                 panic!("out of bounds or connecting non-existent edges");
             }
         }
-
-        // pub fn get
 
         // Adds new vertex to BitGraph8's vertices.
         // Each vertnum starts from 0 up to 255.
         pub fn addv(&mut self) {
             if self.vertices.len() <= 255 {
                 let _i: u8 = self.vertices.len() as u8;
-
                 // Checks if all other vertices edge verts need to be updated (via new_ev).
                 if _i == 0 || _i % 8 == 0 { 
                     // adding extra edgevert forall vertives
@@ -114,10 +89,11 @@ pub mod bit_graph8 {
                 }
                 // init capacity for new vec for Vertex8
                 let mut ev: Vec<u8> = Vec::with_capacity(_i as usize / 8 + 1);
-                for _ in 0..ev.capacity() { ev.push(0x00); }
+                for _ in 0..ev.capacity() { // filling pre-allocated array 
+                    ev.push(0x00); 
+                }
                 let v8: Vertex8 = Vertex8::new(_i, ev);
                 self.vertices.push(v8); 
-            
             } else {
                 panic!("Error: BitGraph8 out of bounds! exceeded 255 elements");
             }
