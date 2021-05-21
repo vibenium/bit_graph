@@ -1,9 +1,19 @@
+/*
+    Notes:
+        - There is no purpose for having a weight at all of '1' between each bit.
+        The reason for this is that if there is only a weight of 1 per node, 
+        which means that all nodes will be the EXACT SAME LENGTH from eachother,
+        then there is no reason to record the weigths at all. This will free up the 
+        other 4 bits per u8. 
+*/
+
 
 pub mod bit_graph8 {
     
     mod auxf { // auxiliary functions
         pub fn bitnum_eq(to: u8) -> u8 { (to % 4) * 2 + 2 }
         pub fn ev_idx_eq(to: u8) -> usize { to as usize / 4 }
+        pub fn vertbit_init(num: u8) -> u8 { (1 << (num - 1)) | (1 << (num - 2)) }
     }
     
     #[derive(Debug, Clone)]
@@ -37,7 +47,7 @@ pub mod bit_graph8 {
             // bitnum =>    8 6 4 2                  8 6 4 2 
             // edgevert[1]: 01100100    edgevert[0]: 11000000
             //              7w6w5w4w                 3w2w1w0w
-            self.edgevert[ev_idx] |= (1 << (bitnum - 1)) | (1 << (bitnum - 2))    
+            self.edgevert[ev_idx] |= auxf::vertbit_init(bitnum);    
         }
     }
     
@@ -49,16 +59,22 @@ pub mod bit_graph8 {
 
     impl BitGraph8 {
         
-        
-        pub fn new() -> BitGraph8 { BitGraph8 {vertices: Vec::new() } }
-        
+        pub fn new() -> BitGraph8 { BitGraph8 { vertices: Vec::new() } }
         pub fn size(&self) -> usize {self.vertices.len()}
         
         // gets the vertnum from the corresponding Vertex8 
         pub fn getv(&self, idx: usize) -> u8 { self.vertices[idx].getvn() }
         
-        // pub fn has_connection(&self, from: u8, to: u8) -> bool {
-        //     // ...
+        // Only going out one 
+        // pub fn is_connected(&self, from: u8, to: u8) -> bool {
+        //     // pub fn bitnum_eq(to: u8) -> u8 { (to % 4) * 2 + 2 }
+        //     // pub fn ev_idx_eq(to: u8) -> usize { to as usize / 4 }
+        //     if from < self.vertices.len() && to < self.vertices.len() {
+        //         let bitnum: u8 = auf::bitnum_eq(to);
+        //         let ev_idx: usize = auf::ev_idx_eq(to);
+        //         let mask: u8 = auxf::vertbit_init(bitnum);
+                
+        //     } else { false }
         // }
 
         // gets a Vertex8 (ONLY FOR DEBUGGING)
