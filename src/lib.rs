@@ -1,6 +1,8 @@
 mod itb;
 mod bg8;
 use crate::bg8::bit_graph8::*;
+use rand::Rng;
+
 
 #[cfg(test)]
 mod tests {
@@ -10,6 +12,43 @@ mod tests {
     fn new_bg8() {
         let my_bg8: BitGraph8 = BitGraph8::new();
         assert_eq!(0, my_bg8.size());
+    }
+ 
+    #[test]
+    fn complex_connect2() {
+        
+    }
+
+    #[test]
+    fn complex_connect1() { // undirected graph
+        let mut my_bg8: BitGraph8 = BitGraph8::new();
+        /*
+            0 - 1
+           /|  /|\
+          5 | / | 4
+           \|/  |/
+            2 - 3
+        */
+        for _ in 0..=5 { my_bg8.addv(); }
+        my_bg8.connect(0,1); my_bg8.connect(0,2); my_bg8.connect(0,5);
+        my_bg8.connect(1,2); my_bg8.connect(1,3); my_bg8.connect(1,4); my_bg8.connect(1,0);
+        my_bg8.connect(2,5); my_bg8.connect(2,0); my_bg8.connect(2,1); my_bg8.connect(2,3);
+        my_bg8.connect(3,1); my_bg8.connect(3,2); my_bg8.connect(3,4);
+        my_bg8.connect(4,1); my_bg8.connect(4,3);
+        my_bg8.connect(5,0); my_bg8.connect(5,2);
+
+        assert!(my_bg8.is_connected(0,1)); assert!(my_bg8.is_connected(0,2)); assert!(my_bg8.is_connected(0,5));
+        assert!(my_bg8.is_connected(1,2)); assert!(my_bg8.is_connected(1,3)); assert!(my_bg8.is_connected(1,4)); assert!(my_bg8.is_connected(1,0));
+        assert!(my_bg8.is_connected(2,5)); assert!(my_bg8.is_connected(2,0)); assert!(my_bg8.is_connected(2,1)); assert!(my_bg8.is_connected(2,3));
+        assert!(my_bg8.is_connected(3,1)); assert!(my_bg8.is_connected(3,2)); assert!(my_bg8.is_connected(3,4));
+        assert!(my_bg8.is_connected(4,1)); assert!(my_bg8.is_connected(4,3));
+        assert!(my_bg8.is_connected(5,0)); assert!(my_bg8.is_connected(5,2));
+
+        assert!(!my_bg8.is_connected(5,4));
+        assert!(!my_bg8.is_connected(4,5));
+        assert!(!my_bg8.is_connected(3,0));
+        assert!(!my_bg8.is_connected(0,3));
+
     }
 
     #[test] // 0->1, 1->2, 2->3, ..., 254->255
@@ -35,6 +74,10 @@ mod tests {
         assert!(my_bg8.is_connected(0, 1));
         my_bg8.connect(1, 0);
         assert!(my_bg8.is_connected(1, 0));
+        my_bg8.connect(0,0);
+        assert!(my_bg8.is_connected(0,0));
+        my_bg8.connect(1,1);
+        assert!(my_bg8.is_connected(1,1));
     }
 /*
     #[test] // gaurentees the correct size of each 
