@@ -1,139 +1,73 @@
 mod itb;
-mod bg8;
-use crate::bg8::bit_graph8::*;
-use rand::Rng;
-
+// mod bg8;
+mod bg;
+use crate::bg::bit_graph::*;
+// use crate::bg8::bit_graph8::*;
+// use rand::Rng;
+use crate::BitGraph;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    struct NoData;
+    const BITS: usize = std::mem::size_of::<usize>() * 8;
 
     #[test]
-    fn new_bg8() {
-        let my_bg8: BitGraph8 = BitGraph8::new();
-        assert_eq!(0, my_bg8.size());
-    }
- 
-    #[test]
-    fn complex_connect2() {
+    fn simepl_add_verts2() {
+        let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::BINARY);
+        let mut my_bg2: BitGraph<NoData> = BitGraph::new(EdgeScale::U4);
+        let mut my_bg3: BitGraph<NoData> = BitGraph::new(EdgeScale::U8);
+        let mut my_bg4: BitGraph<NoData> = BitGraph::new(EdgeScale::U16);
+        let mut my_bg5: BitGraph<NoData> = BitGraph::new(EdgeScale::U32);
         
+        assert_eq!(0, my_bg1.size());
+        assert_eq!(0, my_bg2.size());
+        assert_eq!(0, my_bg3.size());
+        assert_eq!(0, my_bg4.size());
+        assert_eq!(0, my_bg5.size());
+
+        for _ in 0..32 {
+            my_bg1.add(NoData);
+            my_bg2.add(NoData);
+            my_bg3.add(NoData);
+            my_bg4.add(NoData);
+            my_bg5.add(NoData);
+        }
+
+        assert_eq!(32, my_bg1.size());
+        assert_eq!(32, my_bg2.size());
+        assert_eq!(32, my_bg3.size());
+        assert_eq!(32, my_bg4.size());
+        assert_eq!(32, my_bg5.size());
+
+        // for x in 0..32 {
+        //     assert_eq!(???, my_bg1.ev_len_at(x));
+        //     assert_eq!(???, my_bg2.ev_len_at(x));
+        //     assert_eq!(???, my_bg3.ev_len_at(x));
+        //     assert_eq!(???, my_bg4.ev_len_at(x));
+        //     assert_eq!(???, my_bg5.ev_len_at(x));
+        // }
     }
 
     #[test]
-    fn complex_connect1() { // undirected graph
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-        /*
-            0 - 1
-           /|  /|\
-          5 | / | 4
-           \|/  |/
-            2 - 3
-        */
-        for _ in 0..=5 { my_bg8.addv(); }
-        my_bg8.connect(0,1); my_bg8.connect(0,2); my_bg8.connect(0,5);
-        my_bg8.connect(1,2); my_bg8.connect(1,3); my_bg8.connect(1,4); my_bg8.connect(1,0);
-        my_bg8.connect(2,5); my_bg8.connect(2,0); my_bg8.connect(2,1); my_bg8.connect(2,3);
-        my_bg8.connect(3,1); my_bg8.connect(3,2); my_bg8.connect(3,4);
-        my_bg8.connect(4,1); my_bg8.connect(4,3);
-        my_bg8.connect(5,0); my_bg8.connect(5,2);
+    fn simepl_add_verts1() {
+        let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::SAME);
+        assert_eq!(0, my_bg1.size());
+        for _ in 0..200 { my_bg1.add(NoData); }
+        assert_eq!(200, my_bg1.size());
 
-        assert!(my_bg8.is_connected(0,1)); assert!(my_bg8.is_connected(0,2)); assert!(my_bg8.is_connected(0,5));
-        assert!(my_bg8.is_connected(1,2)); assert!(my_bg8.is_connected(1,3)); assert!(my_bg8.is_connected(1,4)); assert!(my_bg8.is_connected(1,0));
-        assert!(my_bg8.is_connected(2,5)); assert!(my_bg8.is_connected(2,0)); assert!(my_bg8.is_connected(2,1)); assert!(my_bg8.is_connected(2,3));
-        assert!(my_bg8.is_connected(3,1)); assert!(my_bg8.is_connected(3,2)); assert!(my_bg8.is_connected(3,4));
-        assert!(my_bg8.is_connected(4,1)); assert!(my_bg8.is_connected(4,3));
-        assert!(my_bg8.is_connected(5,0)); assert!(my_bg8.is_connected(5,2));
-
-        assert!(!my_bg8.is_connected(5,4));
-        assert!(!my_bg8.is_connected(4,5));
-        assert!(!my_bg8.is_connected(3,0));
-        assert!(!my_bg8.is_connected(0,3));
-
+        // verifying the amount of edgeverts within each vertex
+        // '+ 1' since there is always at least 1 edgevert per vertex
+        for x in 0..200 { assert_eq!(200 / BITS + 1, my_bg1.ev_len_at(x)); }
     }
 
-    #[test] // 0->1, 1->2, 2->3, ..., 254->255
-    fn simple_connect2() {
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-        for _ in 0..256 {
-            my_bg8.addv();
-        }
-        for i in 0..255 {
-            my_bg8.connect(i, i + 1);
-        }
-        for i in 0..255 {
-            assert!(my_bg8.is_connected(i, i + 1));
-        }
-    }
-
-    #[test] // 0->1 and 1->0
-    fn simple_connect1() {
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-        my_bg8.addv();
-        my_bg8.addv();
-        my_bg8.connect(0, 1);
-        assert!(my_bg8.is_connected(0, 1));
-        my_bg8.connect(1, 0);
-        assert!(my_bg8.is_connected(1, 0));
-        my_bg8.connect(0,0);
-        assert!(my_bg8.is_connected(0,0));
-        my_bg8.connect(1,1);
-        assert!(my_bg8.is_connected(1,1));
-    }
-/*
-    #[test] // gaurentees the correct size of each 
-    fn edgevert_test() {
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-        for i in 0..256 {
-            assert_eq!(i, my_bg8.size());
-            my_bg8.addv();
-            let _v: Vertex8 = my_bg8.getv8(i);
-            assert_eq!
-            (
-                i as usize / 8 + 1,                
-                _v.get_ev_size()
-            );
-        }
-
-        // Post addition of max elements
-        // all should have the same amount
-        for i in 0..256 {
-            let _v: Vertex8 = my_bg8.getv8(i);
-            assert_eq!(32, _v.get_ev_size());
-        }
-    }
-*/
-    #[test] // Tests for adding/getting up to 255 elements
-    fn large_addv_getv_bg8() {
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-        
-        // Testing addv()
-        for i in 0..256 {
-            assert_eq!(i, my_bg8.size());
-            my_bg8.addv();
-        }
-        assert_eq!(256, my_bg8.size()); // last of [0..256]
-
-        // Testing getv()
-        for i in 0..256 {
-            assert_eq!(i as u8, my_bg8.getv(i));
-        }
-    }
-
-    #[test] // Only tests for adding/getting up to 8 elements
-    fn small_addv_getv_bg8() {
-        let mut my_bg8: BitGraph8 = BitGraph8::new();
-
-        // Testing addv()
-        for i in 0..8 {
-            assert_eq!(i, my_bg8.size());
-            my_bg8.addv();
-        }
-        assert_eq!(8, my_bg8.size()); // last of [0..8]
-
-        // Testing getv()
-        for i in 0..8 {
-            assert_eq!(i as u8, my_bg8.getv(i));
-        }
+    #[test]
+    fn new_bitgraphs() {
+        let my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::SAME);
+        let my_bg2: BitGraph<String> = BitGraph::new(EdgeScale::U8);
+        let my_bg3: BitGraph<i8> = BitGraph::new(EdgeScale::U8);
+        let my_bg4: BitGraph<Option<i32>> = BitGraph::new_with_capacity(EdgeScale::SAME, 20);
+        let my_bg5: BitGraph<Vec::<i32>> = BitGraph::new_with_capacity(EdgeScale::U32, 100);
     }
 
     #[test]
