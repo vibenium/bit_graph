@@ -7,7 +7,7 @@
 pub mod bit_graph {
 
     #[derive(Debug)]
-    struct Vertex<T> {
+    struct Vertex<T> {  
         data: T,
         vertnum: usize, // the 'source' vertex number
         edgevert: Vec<usize> // the 'destination' vertex number(s) and their weight(s)
@@ -27,7 +27,9 @@ pub mod bit_graph {
         then there are no weighted edges between vertices. SAME is 
         useful for just establishing connections between vertices 
         without needing to specify a certain weight. Once an 
-        EdgeScale has been chosen, it cannot be changed. 
+        EdgeScale has been chosen, it cannot be changed.
+        
+        U4 ->
     */
     #[derive(PartialEq, Debug)]
     pub enum EdgeScale {
@@ -184,30 +186,16 @@ pub mod bit_graph {
             // also used for index of new vertex
             let length: usize = self.vertices.len(); 
 
-            let partition_size: usize = self.partition;
-
             // The amount of vertices within a single usize
             let vbi: usize = self.vert_bit_indexing; 
-
-            /*
-                Checking if the edgeverts need to be incremented. This is needed because
-                edgverts can only hold as many numbers equal to the amount of bits in a 
-                usize number. When 'partition_size' is not equal to 1, then the edgeverts
-                will be incremented much earlier since more bits will be allocated to 
-                storing the edge information. The greater 'partition_size' is, the more
-                frequent this 'if' statement will execute.
-            */
-            if length != 0 && length % vbi == 0 {
-                for i in 0..length { self.vertices[i].push_new_ev(); }
-            }
             
-            // initializing new edgevert
+            // initializing new edgevert, THIS IS THE PROBLEM, I THINK
             let mut ev: Vec<usize> = Vec::with_capacity(length / vbi + 1);
             for _ in 0..ev.capacity() { // filling pre-allocated array 
                 ev.push(0); // 0x000...
             }
 
-            // initializing new Vertex
+            // initializing new Vertex with new edgevert and new_data
             let v: Vertex<T> = Vertex 
                 {
                     data: new_data,
@@ -216,7 +204,14 @@ pub mod bit_graph {
                 }; 
 
             self.vertices.push(v);
-
+            /*
+                Checking if the edgeverts need to be incremented. This is needed because
+                edgverts can only hold as many numbers equal to the amount of bits in a 
+                usize number.
+            */
+            if length != 0 && length % vbi == 0 { // MAJOR FLAW HERE
+                for i in 0..length { self.vertices[i].push_new_ev(); }
+            }
         }
 
         // adds a vertex with a returned value (the vertnum of the newly added Vertex)

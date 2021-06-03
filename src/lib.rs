@@ -13,7 +13,7 @@ mod tests {
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
     #[test]
-    fn simepl_add_verts2() {
+    fn simple_add_verts2() {
         let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::BINARY);
         let mut my_bg2: BitGraph<NoData> = BitGraph::new(EdgeScale::U4);
         let mut my_bg3: BitGraph<NoData> = BitGraph::new(EdgeScale::U8);
@@ -40,17 +40,17 @@ mod tests {
         assert_eq!(32, my_bg4.size());
         assert_eq!(32, my_bg5.size());
 
-        // for x in 0..32 {
-        //     assert_eq!(???, my_bg1.ev_len_at(x));
-        //     assert_eq!(???, my_bg2.ev_len_at(x));
-        //     assert_eq!(???, my_bg3.ev_len_at(x));
-        //     assert_eq!(???, my_bg4.ev_len_at(x));
-        //     assert_eq!(???, my_bg5.ev_len_at(x));
-        // }
+        for x in 0..32 {
+            assert_eq!(32 / (BITS / 2), my_bg1.ev_len_at(x)); 
+            assert_eq!(32 / (BITS / 4), my_bg2.ev_len_at(x)); 
+            // assert_eq!(???, my_bg3.ev_len_at(x));
+            // assert_eq!(???, my_bg4.ev_len_at(x));
+            // assert_eq!(???, my_bg5.ev_len_at(x));
+        }
     }
 
     #[test]
-    fn simepl_add_verts1() {
+    fn simple_add_verts1() {
         let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::SAME);
         assert_eq!(0, my_bg1.size());
         for _ in 0..200 { my_bg1.add(NoData); }
