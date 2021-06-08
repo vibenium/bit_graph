@@ -8,12 +8,21 @@ use crate::BitGraph;
 
 #[cfg(test)]
 mod tests {
+    
     use super::*;
     struct NoData;
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
+    #[test] // testing for multiple types of additions
+    fn complex_ev_len_at1() {
+        
+    }
+
     #[test]
-    fn simple_add_verts2() {
+    fn simple_ev_len_at1() {
+
+        let vert_amt: usize = 12;
+        
         let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::BINARY);
         let mut my_bg2: BitGraph<NoData> = BitGraph::new(EdgeScale::U4);
         let mut my_bg3: BitGraph<NoData> = BitGraph::new(EdgeScale::U8);
@@ -26,7 +35,14 @@ mod tests {
         assert_eq!(0, my_bg4.size());
         assert_eq!(0, my_bg5.size());
 
-        for _ in 0..32 {
+        assert_eq!(2, my_bg1.get_partition_size());
+        assert_eq!(4, my_bg2.get_partition_size());
+        assert_eq!(8, my_bg3.get_partition_size());
+        assert_eq!(16, my_bg4.get_partition_size());
+        assert_eq!(32, my_bg5.get_partition_size());
+
+
+        for _ in 0..vert_amt {
             my_bg1.add(NoData);
             my_bg2.add(NoData);
             my_bg3.add(NoData);
@@ -34,18 +50,39 @@ mod tests {
             my_bg5.add(NoData);
         }
 
-        assert_eq!(32, my_bg1.size());
-        assert_eq!(32, my_bg2.size());
-        assert_eq!(32, my_bg3.size());
-        assert_eq!(32, my_bg4.size());
-        assert_eq!(32, my_bg5.size());
+        assert_eq!(vert_amt, my_bg1.size());
+        assert_eq!(vert_amt, my_bg2.size());
+        assert_eq!(vert_amt, my_bg3.size());
+        assert_eq!(vert_amt, my_bg4.size());
+        assert_eq!(vert_amt, my_bg5.size());
 
-        for x in 0..32 {
-            assert_eq!(32 / (BITS / 2), my_bg1.ev_len_at(x)); 
-            assert_eq!(32 / (BITS / 4), my_bg2.ev_len_at(x)); 
-            // assert_eq!(???, my_bg3.ev_len_at(x));
-            // assert_eq!(???, my_bg4.ev_len_at(x));
-            // assert_eq!(???, my_bg5.ev_len_at(x));
+        let mut bg_vec = Vec::<BitGraph<NoData>>::with_capacity(5);
+        
+        bg_vec.push(my_bg1);
+        bg_vec.push(my_bg2);
+        bg_vec.push(my_bg3);
+        bg_vec.push(my_bg4);
+        bg_vec.push(my_bg5);
+
+        let mut nums: [usize; 5] = [0, 0, 0, 0, 0];
+
+        // This is needed because of how the adjustments of edgeverts works in bg.rs
+        // The amount of bits must be equivalent to vert_amt / (BITS / EdgeScale)
+        // Therefore, since floor(vert_amt / (BITS / EdgeScale)) may be off by 1,
+        // it is necessary to add 1 in order to properly compare bg_vec[_].ev_len_at(_).
+        if vert_amt % (BITS / 2) != 0 { nums[0] = 1; }
+        if vert_amt % (BITS / 4) != 0 { nums[1] = 1; }
+        if vert_amt % (BITS / 8) != 0 { nums[2] = 1; }
+        if vert_amt % (BITS / 16) != 0 { nums[3] = 1; }
+        if vert_amt % (BITS / 32) != 0 { nums[4] = 1; }
+
+        for x in 0..vert_amt {
+            // Example: 32 / (64 / 2) + (0 or 1) = 1 
+            assert_eq!(vert_amt / (BITS / 2) + nums[0], bg_vec[0].ev_len_at(x)); 
+            assert_eq!(vert_amt / (BITS / 4) + nums[1], bg_vec[1].ev_len_at(x)); 
+            assert_eq!(vert_amt / (BITS / 8) + nums[2], bg_vec[2].ev_len_at(x)); 
+            assert_eq!(vert_amt / (BITS / 16) + nums[3], bg_vec[3].ev_len_at(x));
+            assert_eq!(vert_amt / (BITS / 32) + nums[4], bg_vec[4].ev_len_at(x)); 
         }
     }
 

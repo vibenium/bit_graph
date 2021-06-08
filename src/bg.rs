@@ -65,10 +65,10 @@ pub mod bit_graph {
 
         // Creates new BitGraph with no vertices
         pub fn new(scale: EdgeScale) -> BitGraph<T> {
-            let b = std::mem::size_of::<usize>() * 8;
-            auxf::verify_partition_size(&scale, &b);
+            let b = std::mem::size_of::<usize>() * 8; // the amount of bits in any given machine
+            auxf::verify_partition_size(&scale, &b); // checking for an overflow
             match scale { 
-                SAME   
+                EdgeScale::SAME   
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -76,7 +76,7 @@ pub mod bit_graph {
                             partition: 1, 
                             bits: b  
                         }, 
-                BINARY 
+                EdgeScale::BINARY 
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -84,7 +84,7 @@ pub mod bit_graph {
                             partition: 2, 
                             bits: b  
                         },  
-                U4     
+                EdgeScale::U4     
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -92,7 +92,7 @@ pub mod bit_graph {
                             partition: 4, 
                             bits: b  
                         },
-                U8     
+                EdgeScale::U8     
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -100,7 +100,7 @@ pub mod bit_graph {
                             partition: 8, 
                             bits: b  
                         },
-                U16    
+                EdgeScale::U16    
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -108,7 +108,7 @@ pub mod bit_graph {
                             partition: 16, 
                             bits: b 
                         },
-                U32    
+                EdgeScale::U32    
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
@@ -125,7 +125,7 @@ pub mod bit_graph {
             let b = std::mem::size_of::<usize>() * 8;
             auxf::verify_partition_size(&scale, &b);
             match scale { 
-                SAME   
+                EdgeScale::SAME   
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
@@ -133,7 +133,7 @@ pub mod bit_graph {
                             partition: 1, 
                             bits: b  
                         },
-                BINARY 
+                EdgeScale::BINARY 
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
@@ -141,7 +141,7 @@ pub mod bit_graph {
                             partition: 2, 
                             bits: b  
                         },
-                U4     
+                EdgeScale::U4     
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity),
@@ -149,7 +149,7 @@ pub mod bit_graph {
                             partition: 4, 
                             bits: b  
                         },
-                U8     
+                EdgeScale::U8     
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
@@ -157,7 +157,7 @@ pub mod bit_graph {
                             partition: 8, 
                             bits: b  
                         },
-                U16    
+                EdgeScale::U16    
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
@@ -165,7 +165,7 @@ pub mod bit_graph {
                             partition: 16, 
                             bits: b 
                         },
-                U32     
+                EdgeScale::U32     
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
@@ -176,21 +176,33 @@ pub mod bit_graph {
             }
         }
 
+        pub fn get_partition_size(&self) -> usize { self.partition }
+
+        // Returns the amount of vertices within a given BitGraph
         pub fn size(&self) -> usize { self.vertices.len() }
 
+        // Returns the size of the edgevert at idx
         pub fn ev_len_at(&self, idx: usize) -> usize { self.vertices[idx].get_ev_size() }
 
         // simple add without a returned value
         pub fn add(&mut self, new_data: T) {
 
-            // also used for index of new vertex
-            let length: usize = self.vertices.len(); 
-
+            // all new vertnums are assigned from 0, 1, 2, ..., to the last element added
+            let new_vertnum: usize = self.vertices.len(); 
             // The amount of vertices within a single usize
             let vbi: usize = self.vert_bit_indexing; 
-            
+
+            /*
+             *  Checking if the edgeverts need to be incremented. This is needed because
+             *  edgverts can only hold as many numbers equal to the amount of bits in a 
+             *  usize number.
+            */
+            if new_vertnum % vbi == 0 { 
+                for i in 0..new_vertnum { self.vertices[i].push_new_ev(); }
+            }
+
             // initializing new edgevert, THIS IS THE PROBLEM, I THINK
-            let mut ev: Vec<usize> = Vec::with_capacity(length / vbi + 1);
+            let mut ev: Vec<usize> = Vec::with_capacity(new_vertnum / vbi + 1);
             for _ in 0..ev.capacity() { // filling pre-allocated array 
                 ev.push(0); // 0x000...
             }
@@ -199,19 +211,12 @@ pub mod bit_graph {
             let v: Vertex<T> = Vertex 
                 {
                     data: new_data,
-                    vertnum: length,
+                    vertnum: new_vertnum,
                     edgevert: ev
                 }; 
 
             self.vertices.push(v);
-            /*
-                Checking if the edgeverts need to be incremented. This is needed because
-                edgverts can only hold as many numbers equal to the amount of bits in a 
-                usize number.
-            */
-            if length != 0 && length % vbi == 0 { // MAJOR FLAW HERE
-                for i in 0..length { self.vertices[i].push_new_ev(); }
-            }
+
         }
 
         // adds a vertex with a returned value (the vertnum of the newly added Vertex)
