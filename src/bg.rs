@@ -6,7 +6,7 @@
 
 pub mod bit_graph {
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     struct Vertex<T> {  
         data: T,
         vertnum: usize, // the 'source' vertex number
@@ -19,6 +19,11 @@ pub mod bit_graph {
         pub fn push_new_ev(&mut self) { self.edgevert.push(0); } // 0x000.....
 
         pub fn get_ev_size(&self) -> usize { self.edgevert.len() }
+
+        // bitnum is the destination vertex. es is the EdgeScale
+        pub fn connect_to(&mut self, bitnum: usize, es: usize) {
+
+        }
     }
 
     /*
@@ -31,7 +36,7 @@ pub mod bit_graph {
         
         U4 ->
     */
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Debug, Clone)]
     pub enum EdgeScale {
         SAME, BINARY, U4, U8, U16, U32
     }
@@ -39,7 +44,7 @@ pub mod bit_graph {
     // Used only when the user does not want to store any data inside a Vertex
     // pub struct NoData;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct BitGraph<T> {
         vertices: Vec<Vertex<T>>,
         vert_bit_indexing: usize,
@@ -224,7 +229,14 @@ pub mod bit_graph {
             self.add(data); // uses the add method above
             return self.vertices.len() - 1;
         }
-
+        pub fn connect(&mut self, source: usize, dest: usize) {
+            if source < self.vertices.len() && dest < self.vertices.len() {
+                self.vertices[source].connect_to(dest);
+            } else {
+                panic!("out of bounds or connecting non-existent edges");
+            }
+        
+        }
 
     }
 

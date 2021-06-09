@@ -1,27 +1,83 @@
 mod itb;
-// mod bg8;
 mod bg;
 use crate::bg::bit_graph::*;
-// use crate::bg8::bit_graph8::*;
-// use rand::Rng;
 use crate::BitGraph;
+use std::thread;
+use std::thread::JoinHandle;
 
 #[cfg(test)]
 mod tests {
     
     use super::*;
+    #[derive(Clone)]
     struct NoData;
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
-    #[test] // testing for multiple types of additions
+    #[test] 
     fn complex_ev_len_at1() {
         
+        pub fn test_for_many_verts(vert_amt: usize, bg: BitGraph<NoData>, es: usize) { 
+            let num: usize;
+            if vert_amt % (BITS / es) != 0 {
+                num = 1; 
+            } else {
+                num = 0;
+            }
+            for x in 0..vert_amt {
+                assert_eq!(vert_amt / (BITS / es) + num, bg.ev_len_at(x));
+            }
+        }
+
+        pub fn add_verts(bg: &mut BitGraph<NoData>, c: usize) {
+            for _ in 0..c { bg.add(NoData); }
+        }
+
+        for cap in 1..1_000 {
+
+            let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, cap);
+            let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, cap);
+            let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, cap);
+            let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, cap);
+            let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, cap);
+            let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, cap);
+            
+            add_verts(&mut bg_same, cap);
+            add_verts(&mut bg_binary, cap);
+            add_verts(&mut bg_u4, cap);
+            add_verts(&mut bg_u8, cap);
+            add_verts(&mut bg_u16, cap);
+            add_verts(&mut bg_u32, cap);
+
+            let t1: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_same, 1) }); 
+            let t2: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_binary, 2) }); 
+            let t3: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_u4, 4) });
+            let t4: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_u8, 8) });  
+            let t5: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_u16, 16) });  
+            let t6: JoinHandle<()> =
+                std::thread::spawn(move || { test_for_many_verts(cap, bg_u32, 32) });  
+
+            t1.join();
+            t2.join();
+            t3.join();
+            t4.join();
+            t5.join();
+            t6.join();
+
+
+            }
+
+         
     }
 
     #[test]
     fn simple_ev_len_at1() {
 
-        let vert_amt: usize = 12;
+        let vert_amt: usize = 0;
         
         let mut my_bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::BINARY);
         let mut my_bg2: BitGraph<NoData> = BitGraph::new(EdgeScale::U4);
