@@ -20,9 +20,34 @@ pub mod bit_graph {
 
         pub fn get_ev_size(&self) -> usize { self.edgevert.len() }
 
-        // bitnum is the destination vertex. es is the EdgeScale
-        pub fn connect_to(&mut self, bitnum: usize, es: usize) {
+        /*
+            connect_to: This function establishes a connection between a source and destination vertex.
+            It is called from the bitgraphs connect() and try_connect() functions. Establishing the 
+            source connection is the simplest part of the process, and does not need to directly 
+            interact with a Vertex<T> type. It is therefore, not a necessary step here. The comments
+            below will have detailed descriptions about the inner workings of the function...
 
+            bitnum: The destination vertex.
+            vbi: vert_bit_indexing from a given BitGraph<T>. Needed for indexing the correct edgevert. 
+            
+            In connect() impl of BitGraph<T>...
+            self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing);
+        
+            self.edgevert[bitnum / vbi] ... EXPLAINED: The amount of edgeverts is proportional to the amount
+            of bits on a maching, vertices in a given graph, and which EdgeScale has been choosen at the
+            initialization of the graph. When there are not enough bits in a number to store a vertex and
+            its weights, another edgevert will be needed. self.edgevert[bitnum / vbi] ensures that any bitnum
+            (destination vertex) will find the right edgevert based on the amount of bits divided by the 
+            partition size (also known as vert_bit_indexing in the BitGraph<T> struct) to establish a 
+            connection for any vertnum from 0 to infinity.
+
+            ... |= (1 << (es - 1)) << (bitnum % vbi) EXPLAINED: 
+        */
+        
+        // NEED TO ADD 'es'
+        pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize) {
+            self.edgevert[bitnum / vbi] |= (1 << (es - 1)) << (bitnum % vbi); 
+            // NEED TO APPLY WEIGHT BELOW...
         }
     }
 
@@ -48,6 +73,7 @@ pub mod bit_graph {
     pub struct BitGraph<T> {
         vertices: Vec<Vertex<T>>,
         vert_bit_indexing: usize,
+        max_weight: usize, // The max weight an edge can have 
         partition: usize, // how the bits are divided up
         bits: usize, // the number of bits on any given machine
     }
@@ -63,7 +89,7 @@ pub mod bit_graph {
                 *scale == EdgeScale::U32 && *bits < 32 
             { panic!("Not enough bits for the given EdgeScale"); }
         }
-
+        
     }
     
     impl<T> BitGraph<T> { 
@@ -78,6 +104,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
                             vert_bit_indexing: b / 1,
+                            max_weight: 0,
                             partition: 1, 
                             bits: b  
                         }, 
@@ -86,6 +113,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
                             vert_bit_indexing: b / 2,
+                            max_weight: 1, // 01
                             partition: 2, 
                             bits: b  
                         },  
@@ -94,6 +122,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
                             vert_bit_indexing: b / 4,
+                            max_weight: 7, // 0111
                             partition: 4, 
                             bits: b  
                         },
@@ -102,6 +131,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
                             vert_bit_indexing: b / 8,
+                            max_weight: 127, // 0111 1111
                             partition: 8, 
                             bits: b  
                         },
@@ -110,6 +140,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
                             vert_bit_indexing: b / 16,
+                            max_weight: 32_767, // 0111 1111 1111 1111
                             partition: 16, 
                             bits: b 
                         },
@@ -117,7 +148,8 @@ pub mod bit_graph {
                     =>  BitGraph 
                         { 
                             vertices: Vec::<Vertex<T>>::new(),
-                            vert_bit_indexing: b / 32, 
+                            vert_bit_indexing: b / 32,
+                            max_weight: 2_147_483_647, // 0111 1111 1111 1111 1111 1111 1111 1111
                             partition: 32, 
                             bits: b 
                         },
@@ -132,9 +164,10 @@ pub mod bit_graph {
             match scale { 
                 EdgeScale::SAME   
                     =>  BitGraph 
-                        { 
+                        {  
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
                             vert_bit_indexing: b / 1,
+                            max_weight: 0,
                             partition: 1, 
                             bits: b  
                         },
@@ -143,6 +176,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
                             vert_bit_indexing: b / 2,
+                            max_weight: 1, // 01
                             partition: 2, 
                             bits: b  
                         },
@@ -151,6 +185,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity),
                             vert_bit_indexing: b / 4,
+                            max_weight: 7, // 0111
                             partition: 4, 
                             bits: b  
                         },
@@ -159,6 +194,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
                             vert_bit_indexing: b / 8,
+                            max_weight: 127, // 0111 1111
                             partition: 8, 
                             bits: b  
                         },
@@ -167,6 +203,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
                             vert_bit_indexing: b / 16,
+                            max_weight: 32_767, // 0111 1111 1111 1111
                             partition: 16, 
                             bits: b 
                         },
@@ -175,6 +212,7 @@ pub mod bit_graph {
                         { 
                             vertices: Vec::<Vertex<T>>::with_capacity(capacity), 
                             vert_bit_indexing: b / 32,
+                            max_weight: 2_147_483_647, // 0111 1111 1111 1111 1111 1111 1111 1111
                             partition: 32, 
                             bits: b 
                         },
@@ -229,9 +267,18 @@ pub mod bit_graph {
             self.add(data); // uses the add method above
             return self.vertices.len() - 1;
         }
-        pub fn connect(&mut self, source: usize, dest: usize) {
+
+        // The connect_to() function found in Vertex<T> impl
+        // pub fn connect_to(&mut self, bitnum: usize, weight: usize, bits_partition: usize, partition_size: usize) {
+        pub fn connect(&mut self, source: usize, dest: usize, weight: usize) {
             if source < self.vertices.len() && dest < self.vertices.len() {
-                self.vertices[source].connect_to(dest);
+                if weight <= self.max_weight { 
+                    // performing connection by calling a Vertex<T> function...
+                    // self.vert_bit_indexing is needed for proper edgevert indexing for any given vertex
+                    self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing);
+                } else {
+                    panic!("wieght exceeds max wieght")
+                }
             } else {
                 panic!("out of bounds or connecting non-existent edges");
             }

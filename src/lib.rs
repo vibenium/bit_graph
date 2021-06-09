@@ -61,15 +61,33 @@ mod tests {
             let t6: JoinHandle<()> =
                 std::thread::spawn(move || { test_for_many_verts(cap, bg_u32, 32) });  
 
-            t1.join();
-            t2.join();
-            t3.join();
-            t4.join();
-            t5.join();
-            t6.join();
-
-
+            match t1.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t1.join() failed"),
             }
+            match t2.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t2.join() failed"),
+            }
+            match t3.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t3.join() failed"),
+            }
+            match t4.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t4.join() failed"),
+            }
+            match t5.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t5.join() failed"),
+            }
+            match t6.join() {
+                Ok(_) => assert!(true),
+                Err(_) => panic!("t6.join() failed"),
+            }
+
+
+        }
 
          
     }
