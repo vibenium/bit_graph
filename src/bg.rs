@@ -44,26 +44,23 @@ pub mod bit_graph {
             connection for any vertnum from 0 to infinity.
 
         */        
+        // DOES NOT WORK!!! 
 
-        // DOES NOT WORK
+        // Got:         0010 1101 1001 1000
+        // Expected:    1010 1101 1001 0000
         pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
-            // How far the new_vert_bit_pos will extend
-            let scalar: usize = bitnum % vbi;
-            let mut adjust: usize = 0; 
-            if weight == 0 && partition_size == 1 {
-                adjust = 1;
-            }
-            // matching is needed, otherwise, integer overflow
-            let new_vert_bit_pos: usize = match scalar {
-                0 => 1 << (partition_size - 1 + adjust),
-                _ => 1 << ((partition_size * scalar) - 1),
+            let bit_pos_scalar1: usize = bitnum % vbi;
+            let bit_pos_scalar2: usize = match bitnum {
+                0 => 1,
+                _ => bitnum % vbi,
             };
-            // multiplying by a scalar is permissible here since weights start at 
-            // the 1st binary number in any given edgevert.
-            let new_weight_bit_pos: usize = weight << (scalar * partition_size);
-            // Finally, merging the vertex and weight bit positions together with  
-            // the index @ (bitnum / vbi).
-            self.edgevert[bitnum / vbi] |= new_vert_bit_pos | new_weight_bit_pos; 
+            match partition_size {
+                1 => self.edgevert[bitnum / vbi] 
+                    |= 1 << bit_pos_scalar1, // Since there are no wieghts 
+                _ => self.edgevert[bitnum / vbi] 
+                    |= 1 << ((partition_size * (bit_pos_scalar2 + 1)) - 1) 
+                    | weight << (bit_pos_scalar1 * partition_size),
+            }
         }
     }
 

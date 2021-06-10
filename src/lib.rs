@@ -14,6 +14,28 @@ mod tests {
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
     #[test]
+    fn simple_connect2() {
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, 5);
+        for _ in 0..5 { bg_u4.add(NoData); }
+
+        bg_u4.connect(0, 1, 1);
+        bg_u4.connect(0, 2, 5);
+        bg_u4.connect(0, 3, 2);
+        bg_u4.connect(1, 3, 2);
+        bg_u4.connect(1, 4, 3);
+        bg_u4.connect(2, 4, 4);
+        bg_u4.connect(3, 2, 7);
+        bg_u4.connect(3, 4, 6);
+
+        assert_eq!(44_432, bg_u4.ev_num_at(0, 0));
+        assert_eq!(761_856, bg_u4.ev_num_at(1, 0));
+        assert_eq!(786_432, bg_u4.ev_num_at(2, 0));
+        assert_eq!(921_344, bg_u4.ev_num_at(3, 0));
+        assert_eq!(0, bg_u4.ev_num_at(4, 0));
+
+    }
+
+    #[test] 
     fn simple_connect1() {
         
         let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 4);
@@ -26,9 +48,9 @@ mod tests {
         bg_same.connect(2, 3, 0);
         bg_same.connect(3, 0, 0); 
 
-        // assert_eq!(4, bg_same.ev_num_at(0, 0));
-        // assert_eq!(12, bg_same.ev_num_at(1, 0));
-        // assert_eq!(8, bg_same.ev_num_at(2, 0));
+        assert_eq!(4, bg_same.ev_num_at(0, 0));
+        assert_eq!(12, bg_same.ev_num_at(1, 0));
+        assert_eq!(8, bg_same.ev_num_at(2, 0));
         assert_eq!(1, bg_same.ev_num_at(3, 0));
     }
 
