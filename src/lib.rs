@@ -13,6 +13,25 @@ mod tests {
     struct NoData;
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
+    #[test]
+    fn simple_connect1() {
+        
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 4);
+        for _ in 0..4 { bg_same.add(NoData); } // adding 5 elements
+
+        // weigth must be 0 since EdgeScale::SAME
+        bg_same.connect(0, 2, 0); 
+        bg_same.connect(1, 2, 0); 
+        bg_same.connect(1, 3, 0);
+        bg_same.connect(2, 3, 0);
+        bg_same.connect(3, 0, 0); 
+
+        // assert_eq!(4, bg_same.ev_num_at(0, 0));
+        // assert_eq!(12, bg_same.ev_num_at(1, 0));
+        // assert_eq!(8, bg_same.ev_num_at(2, 0));
+        assert_eq!(1, bg_same.ev_num_at(3, 0));
+    }
+
     #[test] 
     fn complex_ev_len_at1() {
         

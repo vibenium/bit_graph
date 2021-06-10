@@ -17,8 +17,10 @@ pub mod bit_graph {
 
         // used when more edgeverts are needed to initialize potential connections
         pub fn push_new_ev(&mut self) { self.edgevert.push(0); } // 0x000.....
-
+        // size of the Vector of type usize, edgevert
         pub fn get_ev_size(&self) -> usize { self.edgevert.len() }
+        // retrieving the edgevert itself (maybe only use for debugging purposes)
+        pub fn get_ev_num(&self, idx: usize) -> usize { self.edgevert[idx] } 
 
         /*
             connect_to: This function establishes a connection between a source and destination vertex.
@@ -31,7 +33,7 @@ pub mod bit_graph {
             vbi: vert_bit_indexing from a given BitGraph<T>. Needed for indexing the correct edgevert. 
             
             In connect() impl of BitGraph<T>...
-            self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing);
+            self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing, self.partition);
         
             self.edgevert[bitnum / vbi] ... EXPLAINED: The amount of edgeverts is proportional to the amount
             of bits on a maching, vertices in a given graph, and which EdgeScale has been choosen at the
@@ -41,13 +43,27 @@ pub mod bit_graph {
             partition size (also known as vert_bit_indexing in the BitGraph<T> struct) to establish a 
             connection for any vertnum from 0 to infinity.
 
-            ... |= (1 << (es - 1)) << (bitnum % vbi) EXPLAINED: 
-        */
-        
-        // NEED TO ADD 'es'
-        pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize) {
-            self.edgevert[bitnum / vbi] |= (1 << (es - 1)) << (bitnum % vbi); 
-            // NEED TO APPLY WEIGHT BELOW...
+        */        
+
+        // DOES NOT WORK
+        pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
+            // How far the new_vert_bit_pos will extend
+            let scalar: usize = bitnum % vbi;
+            let mut adjust: usize = 0; 
+            if weight == 0 && partition_size == 1 {
+                adjust = 1;
+            }
+            // matching is needed, otherwise, integer overflow
+            let new_vert_bit_pos: usize = match scalar {
+                0 => 1 << (partition_size - 1 + adjust),
+                _ => 1 << ((partition_size * scalar) - 1),
+            };
+            // multiplying by a scalar is permissible here since weights start at 
+            // the 1st binary number in any given edgevert.
+            let new_weight_bit_pos: usize = weight << (scalar * partition_size);
+            // Finally, merging the vertex and weight bit positions together with  
+            // the index @ (bitnum / vbi).
+            self.edgevert[bitnum / vbi] |= new_vert_bit_pos | new_weight_bit_pos; 
         }
     }
 
@@ -275,14 +291,18 @@ pub mod bit_graph {
                 if weight <= self.max_weight { 
                     // performing connection by calling a Vertex<T> function...
                     // self.vert_bit_indexing is needed for proper edgevert indexing for any given vertex
-                    self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing);
+                    self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing, self.partition);
                 } else {
-                    panic!("wieght exceeds max wieght")
+                    panic!("ERROR: from connect() -> wieght exceeds max wieght")
                 }
             } else {
-                panic!("out of bounds or connecting non-existent edges");
+                panic!("ERROR: from connect() -> out of bounds or connecting non-existent vertices");
             }
         
+        }
+
+        pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 
+            self.vertices[vert_idx].get_ev_num(ev_idx)
         }
 
     }
