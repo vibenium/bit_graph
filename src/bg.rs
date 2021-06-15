@@ -44,14 +44,12 @@ pub mod bit_graph {
             connection for any vertnum from 0 to infinity.
 
         */        
-        // DOES NOT WORK!!! 
 
-        // Got:         0010 1101 1001 1000
         // Expected:    1010 1101 1001 0000
         pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
             let bit_pos_scalar1: usize = bitnum % vbi;
             let bit_pos_scalar2: usize = match bitnum {
-                0 => 1,
+                0 => 1, // This needs some proper investigation
                 _ => bitnum % vbi,
             };
             match partition_size {
@@ -297,6 +295,14 @@ pub mod bit_graph {
             }
         
         }
+
+
+        // REPLACE THIS WITH SOMETHING BETTER
+        /*
+            pub fn ev_num_at(&self, vert_idx: usize) -> usize {
+                self.vertices[vert_idx].get_ev_num(vert_idx / self.bits);
+            }
+        */
 
         pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 
             self.vertices[vert_idx].get_ev_num(ev_idx)
