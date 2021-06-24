@@ -13,12 +13,59 @@ mod tests {
     struct NoData;
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
-    #[test] // Only works for 64-bit machines...
-    fn simple_connect4() { // connect v0 to v0, v1, v2, ..., v63
-        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 64);
-        for _ in 0..64 { bg_same.add(NoData); }
-        for x in 0..64 { bg_same.connect(0, x, 0); }
-        assert_eq!(0xffffffffffffffff, bg_same.ev_num_at(0, 0));
+    #[test] // connecting one element to itself
+    fn simple_is_connected_test3() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 1);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, 1);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, 1);
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, 1);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, 1);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, 1);
+        
+        bg_same.add(NoData);
+        bg_binary.add(NoData);
+        bg_u4.add(NoData);
+        bg_u8.add(NoData);
+        bg_u16.add(NoData);
+        bg_u32.add(NoData);
+
+        // connecting 0 -> 0 with a weight of 0 in all graph types
+        bg_same.connect(0, 0, 0);
+        bg_binary.connect(0, 0, 0);
+        bg_u4.connect(0, 0, 0);
+        bg_u8.connect(0, 0, 0);
+        bg_u16.connect(0, 0, 0);
+        bg_u32.connect(0, 0, 0);
+
+        assert!(bg_same.is_connected(0, 0));
+        assert!(bg_binary.is_connected(0, 0));
+        assert!(bg_u4.is_connected(0, 0));
+        assert!(bg_u8.is_connected(0, 0));
+        assert!(bg_u16.is_connected(0, 0));
+        assert!(bg_u32.is_connected(0, 0));
+    }
+
+    #[test] // connects v0 to v1, v2, ..., v499 and checks if connected
+    fn simple_is_connected_test2() {
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, 500);
+        for _ in 0..500 { bg_u8.add(NoData); }
+        for x in 0..500 { bg_u8.connect(0, x, 127); }
+        for x in 0..500 { 
+            println!("{} passed for simple_is_connected_test2()", x);
+            assert!(bg_u8.is_connected(0, x)); 
+        }
+    }
+
+    #[test]
+    fn simple_is_connected_test1() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 2);
+        bg_same.add(NoData);
+        bg_same.add(NoData);
+        bg_same.connect(0, 1, 0);
+        assert!(bg_same.is_connected(0, 1));
+        bg_same.add(NoData);
+        bg_same.connect(0, 2, 0);
+        assert!(bg_same.is_connected(0, 2));
     }
 
     #[test]
@@ -28,10 +75,9 @@ mod tests {
         let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, bits2); 
         for _ in 0..bits2 { bg_u8.add(NoData); }
         bg_u8.connect(0, bits2, 50); // fails because bg_u8.size() = bits2
-
     }
 
-    #[test]
+    #[test] // verifying connection using the edgevert nums
     fn complex_connect1() {
         // bits2 explained: BITS / 8 + 1 is needed to add an extra edgevert for all vertices
         // to get exactly 2 edgeverts for all vertices.
@@ -60,6 +106,46 @@ mod tests {
 
     }
 
+    #[test]
+    fn simple_connect5() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 1);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, 1);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, 1);
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, 1);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, 1);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, 1);
+        
+        bg_same.add(NoData);
+        bg_binary.add(NoData);
+        bg_u4.add(NoData);
+        bg_u8.add(NoData);
+        bg_u16.add(NoData);
+        bg_u32.add(NoData);
+
+        // connecting 0 -> 0 with a weight of 0 in all graph types
+        bg_same.connect(0, 0, 0);
+        bg_binary.connect(0, 0, 0);
+        bg_u4.connect(0, 0, 0);
+        bg_u8.connect(0, 0, 0);
+        bg_u16.connect(0, 0, 0);
+        bg_u32.connect(0, 0, 0);
+
+        // all failing because all bits are off by the next edge scale
+        assert_eq!(1, bg_same.ev_num_at(0, 0)); // <- The only one that works...
+        assert_eq!(2, bg_binary.ev_num_at(0, 0));
+        assert_eq!(8, bg_u4.ev_num_at(0, 0));
+        assert_eq!(128, bg_u8.ev_num_at(0, 0));
+        assert_eq!(32_768, bg_u16.ev_num_at(0, 0));
+        assert_eq!(2_147_483_648, bg_u32.ev_num_at(0, 0));
+    }
+
+    #[test] // Only works for 64-bit machines...
+    fn simple_connect4() { // connect v0 to v0, v1, v2, ..., v63
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 64);
+        for _ in 0..64 { bg_same.add(NoData); }
+        for x in 0..64 { bg_same.connect(0, x, 0); }
+        assert_eq!(0xffffffffffffffff, bg_same.ev_num_at(0, 0));
+    }
 
     #[test] // May only work for 64-bit machines...
     fn simple_connect3() {

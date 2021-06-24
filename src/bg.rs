@@ -45,20 +45,21 @@ pub mod bit_graph {
 
         */        
 
-        // Expected:    1010 1101 1001 0000
+        // ERROR: Does not work for v0 -> v0
         pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
-            let bit_pos_scalar1: usize = bitnum % vbi;
-            let bit_pos_scalar2: usize = match bitnum {
-                0 => 1, // This needs some proper investigation
-                _ => bitnum % vbi,
+            // let bit_pos_scalar: usize = bitnum % edgevert;
+            // let bits: usize = vbi * partition_size;
+            let bit_pos_scalar: usize = bitnum % vbi;
+            let vert_bit_pos: usize = match partition_size {
+                1 => 1 << bit_pos_scalar,
+                _ => 1 << ((bit_pos_scalar + 1) * partition_size) - 1,
             };
-            match partition_size {
-                1 => self.edgevert[bitnum / vbi] 
-                    |= 1 << bit_pos_scalar1, // Since there are no wieghts 
-                _ => self.edgevert[bitnum / vbi] 
-                    |= 1 << ((partition_size * (bit_pos_scalar2 + 1)) - 1) 
-                    | weight << (bit_pos_scalar1 * partition_size),
-            }
+            let vert_weight_pos: usize = match partition_size {
+                1 => 0,
+                _ => weight << bit_pos_scalar * partition_size,
+            };
+            self.edgevert[bitnum / vbi] |= (vert_bit_pos | vert_weight_pos);
+            
         }
     }
 
@@ -70,7 +71,6 @@ pub mod bit_graph {
         without needing to specify a certain weight. Once an 
         EdgeScale has been chosen, it cannot be changed.
         
-        U4 ->
     */
     #[derive(PartialEq, Debug, Clone)]
     pub enum EdgeScale {
@@ -100,7 +100,24 @@ pub mod bit_graph {
                 *scale == EdgeScale::U32 && *bits < 32 
             { panic!("Not enough bits for the given EdgeScale"); }
         }
-        
+
+        pub fn check_bounds(source: &usize, dest: &usize, vert_len: usize) {
+            let source_is_greater: bool = *source >= vert_len;
+            let dest_is_greater: bool = *dest >= vert_len; 
+            if  source_is_greater || dest_is_greater {
+                if source_is_greater && dest_is_greater {
+                    panic!("ERROR: check_bounds() -> source and destination are out of bounds");
+                } else {
+                    if source_is_greater { 
+                        panic!("ERROR: check_bounds() -> source is greater"); 
+                    } else { // dest_is_greater
+                        panic!("ERROR: check_bounds() -> destination is greater"); 
+                    }
+                }
+            }
+        }
+
+
     }
     
     impl<T> BitGraph<T> { 
@@ -282,33 +299,25 @@ pub mod bit_graph {
         // The connect_to() function found in Vertex<T> impl
         // pub fn connect_to(&mut self, bitnum: usize, weight: usize, bits_partition: usize, partition_size: usize) {
         pub fn connect(&mut self, source: usize, dest: usize, weight: usize) {
-            if source < self.vertices.len() && dest < self.vertices.len() {
-                if weight <= self.max_weight { 
-                    // performing connection by calling a Vertex<T> function...
-                    // self.vert_bit_indexing is needed for proper edgevert indexing for any given vertex
-                    self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing, self.partition);
-                } else {
-                    panic!("ERROR: from connect() -> wieght exceeds max wieght")
-                }
+            auxf::check_bounds(&source, &dest, self.vertices.len());
+            if weight <= self.max_weight { 
+                // performing connection by calling a Vertex<T> function...
+                // self.vert_bit_indexing is needed for proper edgevert indexing for any given vertex
+                self.vertices[source].connect_to(dest, weight, self.vert_bit_indexing, self.partition);
             } else {
-                panic!("ERROR: from connect() -> out of bounds or connecting non-existent vertices");
+                panic!("ERROR: from connect() -> wieght exceeds max wieght")
             }
         
         }
-
-
-        // REPLACE THIS WITH SOMETHING BETTER
-        /*
-            pub fn ev_num_at(&self, vert_idx: usize) -> usize {
-                self.vertices[vert_idx].get_ev_num(vert_idx / self.bits);
-            }
-        */
 
         pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 
             self.vertices[vert_idx].get_ev_num(ev_idx)
         }
 
-    }
+        pub fn is_connected(&self, source: usize, dest: usize) -> bool {
+            unimplemented!()
+        }
 
+    }
 
 }
