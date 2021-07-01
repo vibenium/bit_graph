@@ -1,4 +1,4 @@
-mod itb;
+// mod itb;
 mod bg;
 use crate::bg::bit_graph::*;
 use crate::BitGraph;
@@ -12,6 +12,26 @@ mod tests {
     #[derive(Clone)]
     struct NoData;
     const BITS: usize = std::mem::size_of::<usize>() * 8;
+
+    #[test] // test if not connected
+    fn simple_is_connected_test4() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 4);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, 4);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, 4);
+
+        for _ in 0..4 {
+            bg_same.add(NoData);
+            bg_binary.add(NoData);
+            bg_u4.add(NoData);
+        }
+        // No connections made. Therefore, ...
+        for x in 0..4 {
+            assert!(!bg_same.is_connected(0, 1));
+            assert!(!bg_binary.is_connected(1, 3));
+            assert!(!bg_u4.is_connected(2, 0));
+        }
+
+    }
 
     #[test] // connecting one element to itself
     fn simple_is_connected_test3() {
@@ -397,6 +417,7 @@ mod tests {
         let my_bg5: BitGraph<Vec::<i32>> = BitGraph::new_with_capacity(EdgeScale::U32, 100);
     }
 
+    /*
     #[test]
     fn test_itb8() {
         let str1 = itb::int_to_bit8(&0);
@@ -437,4 +458,5 @@ mod tests {
             str2
         );
     }
+    */
 }
