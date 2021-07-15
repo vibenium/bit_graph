@@ -9,9 +9,93 @@ use std::thread::JoinHandle;
 mod tests {
     
     use super::*;
+
     #[derive(Clone)]
     struct NoData;
+
     const BITS: usize = std::mem::size_of::<usize>() * 8;
+
+    #[test]
+    fn simple_disconnect1() {
+        assert!(false); // unimplemented...
+    }
+
+    #[test]
+    fn simple_remove4() { // BIT CIRCLE
+        // utilizing all bits
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, BITS);
+        for _ in 0..BITS { bg_same.add(NoData); } // pushing data...
+        // making big circle
+        for v in 0..(BITS - 1) { bg_same.connect(v, v + 1, 0); }
+        // final (cyclic) connection. Last vertex to 1st
+        bg_same.connect(BITS - 1, 0, 0);
+        // Double checking connections...
+        for v in 0..(BITS - 1) { assert!(bg_same.is_connected(v, v + 1)); }
+        assert!(bg_same.is_connected(BITS - 1, 0));
+        let n: usize = 2; // For potential editing purposes 
+        bg_same.remove(BITS / n); // removing middle vertex...
+        // assert_eq!(BITS - 1, bg_same.size());
+
+        // all pre-vertex removal should be unchanged
+        for v in 0..(BITS / n - 1) { 
+            println!("WHEN Vl1 = {}...\n", v);
+            assert_eq!(2 << v, bg_same.ev_num_at(v, 0));
+        }
+        // all post-vertex removal should be '>>' by 1
+        // minus 2 since bg_same.connect(BITS - 1, 0, 0);
+        for v in (BITS / n)..(BITS - 2) { 
+            println!("WHEN Vl2 = {}...\n", v);
+            assert_eq!(1 << (v + 1), bg_same.ev_num_at(v, 0));
+        }
+        assert_eq!(1, bg_same.ev_num_at(BITS - 2, 0));
+    }
+
+    #[test] 
+    fn simple_remove3() {
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, 4);
+        for _ in 0..4 { bg_u4.add(NoData); } // pushing data..
+        for x in 0..4 { bg_u4.connect(0, x, 7); } // Connects 0 to 1, 2, and 3
+        
+        // chopping edgevert bits from vertex1
+        // Pre-removal: 1111 1111 1111 1111
+        bg_u4.remove(1); // 0000 1111 1111 1111
+        assert_eq!(3, bg_u4.size());
+        assert_eq!(4_095, bg_u4.ev_num_at(0, 0));
+        bg_u4.remove(1); // 0000 0000 1111 1111
+        assert_eq!(2, bg_u4.size());
+        assert_eq!(255, bg_u4.ev_num_at(0, 0));
+        bg_u4.remove(1); // 0000 0000 0000 1111
+        assert_eq!(1, bg_u4.size());
+        assert_eq!(15, bg_u4.ev_num_at(0, 0));
+
+        // Finally, removing last vertex (vertex0)
+        bg_u4.remove(0);
+        assert_eq!(0, bg_u4.size());
+    }
+
+    #[test] // Removing  0 -> 1 (Same as simple_remove1, but EdgeScale::SAME)
+    fn simple_remove2() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 2);
+        bg_same.add(NoData);
+        bg_same.add(NoData);
+
+        bg_same.connect(0, 1, 0);
+        bg_same.remove(1);
+        assert!(bg_same.size() == 1);
+        assert_eq!(0, bg_same.ev_num_at(0, 0));
+    }
+
+    #[test] // Removing  0 -> 1
+    fn simple_remove1() {
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, 2);
+        bg_binary.add(NoData);
+        bg_binary.add(NoData);
+
+        bg_binary.connect(0, 1, 0);
+        bg_binary.remove(1);
+        assert!(bg_binary.size() == 1);
+        assert_eq!(0, bg_binary.ev_num_at(0, 0));
+    }
 
     #[test] // test if not connected
     fn simple_is_connected_test4() {

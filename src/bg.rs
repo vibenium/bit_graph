@@ -57,6 +57,17 @@ pub mod bit_graph {
             self.edgevert[bitnum / vbi] |= vert_bit_pos | vert_weight_pos;
         }
 
+        // NOT TESTED YET
+        pub fn disconnect_from(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
+            // Example: U4 -> 0000 1111, BINARY -> 0000 0011, SAME -> 0000 0001
+            let m1: usize = usize::MAX >> ((vbi * partition_size) - partition_size);
+            let m2: usize = match partition_size { // shifting bit-region (m1)
+                1 => m1 << bitnum,
+                _ => m1 << ((bitnum * partition_size) - partition_size),
+            };
+            self.edgevert[bitnum / vbi] &= !m2; // clearing shifted bit-region (m2)
+        }
+
         pub fn dec_vn(&mut self) { self.vertnum -= 1; } // decrement vertnum
 
         // shifts all bits down by 1 partition
@@ -74,41 +85,61 @@ pub mod bit_graph {
                 current to fill the empty space created by the shift
 
             'Newer' Notes:
-                - m1 and m2 are used to help oscillate between the
+                - !(usize::MAX >> ocbp_1) and ev_mask are used to help oscillate between the
                 different amount of bits. This is neccesary because
                 once one section is changed of one edgevert, the
                 next will need to be compensated. This concept may
                 have some flaws of its own
         */
-
         pub fn shift_after_vertex(&mut self, vertex: usize, partition_size: usize, bits: usize) {
-
-            let vbi: usize = bits / partition_size; // vert_bit_index
-            let compd_vn: usize = vertex % vbi; // compressed vertex number
             
-            // to get the difference of bits at the end
-            // greater compd_vn means closer to end of bits
-            let diff: usize = vbi - compd_vn;
-            let centered_bit: usize = partition_size * diff;
-            
-            // 1st and 2nd edgevert bit masks
-            let m1: usize = usize::MAX >> centered_bit; // 0xfff... >> centered_bit
-            let m2: usize = !m1 >> compd_vn; // for gathering next ev bits
-            
+            let vbi: usize = bits / partition_size;
+            let compd_vn_bit_pos: usize = (vertex % vbi) * partition_size;
+            let start: usize = vertex / vbi;
             let end: usize = self.edgevert.len() - 1;
-            let start: usize = vertex / vbi + 1; 
+
+            // DEBUG statements
+            /*
+                println!("FORALL edgeverts in vertex({})...\n", self.vertnum);
+                println!("@ vertex({}), edgevert = {}", self.vertnum, self.edgevert[start]);
+                println!("vbi = {}\ncompd_vn_bit_pos = {}\n", vbi, compd_vn_bit_pos);
+                println!("partition_size = {}\nstart = {}\nend = {}\n", partition_size, start, end);
+            */
+            // saved data mask scalar
+            // used for saving data after deleted vertex+weight
+            let saved_data_mask: usize = self.edgevert[start] & !(usize::MAX 
+                    >> (bits - compd_vn_bit_pos - partition_size));
             
-            self.edgevert[start - 1] &= m1; // clearing the way
-            self.edgevert[start - 1] |= // append from next edgevert
-                (self.edgevert[start] & m2) << centered_bit;
-
-            // shift, replace, repeat
-            for e in start..end {
-                self.edgevert[e] >>= compd_vn * partition_size;
-                self.edgevert[e] |= 
-                    (self.edgevert[e + 1] & m2) << centered_bit; 
+            // DEBUG statements
+            /*
+                println!("saved_data_mask = {}", saved_data_mask);
+                println!("!(usize::MAX >> (bits - compd_vn_bit_pos - partition_size)) = {}", 
+                    !(usize::MAX >> (bits - compd_vn_bit_pos - partition_size)));
+                println!("usize::MAX >> (bits - comd_vn_bit_pos - partition_size) = {}", 
+                    usize::MAX >> (bits - compd_vn_bit_pos - partition_size));
+                println!("self.edgevert[start] & (usize::MAX >> (bits - compd_vn_bit_pos)) = {}", 
+                    self.edgevert[start] & (usize::MAX >> (bits - compd_vn_bit_pos)));
+                println!("self.edgevert[start] | (saved_data_mask >> partition_size) = {}\n",
+                    self.edgevert[start] | (saved_data_mask >> partition_size));
+            */
+            // delete everything from vertex+weight and onward...
+            // Not subtracting partition_size to delete selected vertex+weight 
+            self.edgevert[start] &= usize::MAX >> (bits - compd_vn_bit_pos); // <- THE PROBLEM!!!
+            // insert and shift saved data to edgevert
+            self.edgevert[start] |= saved_data_mask >> partition_size;
+            
+            if start < end { // CURRENTLY NOT BEING TESTED
+                let m1: usize = usize::MAX >> (bits - partition_size);
+                self.edgevert[start] |= (self.edgevert[start + 1] & m1) 
+                  << compd_vn_bit_pos;
+                  for e in (start + 1)..end {
+                      self.edgevert[e] >> partition_size;
+                      self.edgevert[e] |= (self.edgevert[e + 1] & m1)
+                        << compd_vn_bit_pos;
+                  }
+                  self.edgevert[end] >> partition_size;
             }
-
+                      
         }
     }
 
@@ -358,6 +389,15 @@ pub mod bit_graph {
             } 
         }
 
+        pub fn disconnect(&mut self, source: usize, dest: usize, weight: usize) {
+            auxf::check_bounds(&source, &dest, self.vertices.len());            
+            if weight <= self.max_weight { 
+                self.vertices[source].disconnect_from(dest, weight, self.vert_bit_indexing, self.partition);
+            } else {
+                panic!("ERROR: from disconnect() -> wieght exceeds max wieght")
+            } 
+        }
+
         pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 
             self.vertices[vert_idx].get_ev_num(ev_idx)
         }
@@ -373,21 +413,29 @@ pub mod bit_graph {
                     & (1 << ((bit_pos_scalar + 1) * self.partition) - 1) != 0,
             }
         }
-
+        /*
+            remove: most work is done in shift_after_vertex(). Every vertices vertnum
+            is decreased after the given vertex because once the vertex is removed,
+            empty spaces will be created, leaving wasted space. Overall, this will be
+            the most expensive function. shift_after_vertex() removes all possible 
+            connections with 'vertex'. There are 2 loops to reduce redundant 
+            conditionals.
+        */
         pub fn remove(&mut self, vertex: usize) {
             let len: usize = self.vertices.len();
-            if len == 0 || vertex >= len {
+            if vertex >= len {
                 panic!("cannot remove non-existent element");
             }
-            for v in 0..len {
-                // shifting all vertnums down after vertex
-                if v > vertex {
-                    self.vertices[v].dec_vn();
-                }
-                // rearranging bits in edgevert for connections after 'vertex'
+
+            for v in 0..vertex { // pre vertex work
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
             }
-            self.vertices.remove(vertex); // Finally, removing the elements
+            // This loop does not happen if vertex == (self.vertices.len() - 1)
+            for v in (vertex + 1)..len { // post vertex work
+                self.vertices[v].dec_vn();
+                self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
+            }
+            self.vertices.remove(vertex); // Finally, removing the vertex
         }
     }
 
