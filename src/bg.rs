@@ -45,27 +45,33 @@ pub mod bit_graph {
 
         */        
         pub fn connect_to(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
+            // How far the bit_pos will left shift scaled by 'partition_size'
             let bit_pos_scalar: usize = bitnum % vbi;
+            // Initializing bit position for the bitnum
             let vert_bit_pos: usize = match partition_size {
                 1 => 1 << bit_pos_scalar,
                 _ => 1 << ((bit_pos_scalar + 1) * partition_size) - 1,
             };
+            // Initializing bits for the 'weight' region
             let vert_weight_pos: usize = match partition_size {
                 1 => 0,
                 _ => weight << bit_pos_scalar * partition_size,
             };
+            // Finalizing edgevert
             self.edgevert[bitnum / vbi] |= vert_bit_pos | vert_weight_pos;
         }
 
-        // NOT TESTED YET
-        pub fn disconnect_from(&mut self, bitnum: usize, weight: usize, vbi: usize, partition_size: usize) {
+        pub fn disconnect_from(&mut self, bitnum: usize, vbi: usize, partition_size: usize) {
+            // defining bit region based on the 'partition_size'
             // Example: U4 -> 0000 1111, BINARY -> 0000 0011, SAME -> 0000 0001
             let m1: usize = usize::MAX >> ((vbi * partition_size) - partition_size);
-            let m2: usize = match partition_size { // shifting bit-region (m1)
+            // shifting bit-region (m1) to prepare the clearing of bits
+            let m2: usize = match partition_size { 
                 1 => m1 << bitnum,
                 _ => m1 << ((bitnum * partition_size) - partition_size),
             };
-            self.edgevert[bitnum / vbi] &= !m2; // clearing shifted bit-region (m2)
+            // clearing shifted bit-region (m2)
+            self.edgevert[bitnum / vbi] &= !m2; 
         }
 
         pub fn dec_vn(&mut self) { self.vertnum -= 1; } // decrement vertnum
@@ -376,6 +382,11 @@ pub mod bit_graph {
             return self.vertices.len() - 1;
         }
 
+        // adds copies of the same type of 'data' a specified amount of 'times'
+        pub fn add_copies(&mut self, data: T, times: usize) where T : Clone {
+            for v in 0..times { self.add(data.clone()); }
+        }
+
         // The connect_to() function found in Vertex<T> impl
         // pub fn connect_to(&mut self, bitnum: usize, weight: usize, bits_partition: usize, partition_size: usize) {
         pub fn connect(&mut self, source: usize, dest: usize, weight: usize) {
@@ -389,13 +400,9 @@ pub mod bit_graph {
             } 
         }
 
-        pub fn disconnect(&mut self, source: usize, dest: usize, weight: usize) {
+        pub fn disconnect(&mut self, source: usize, dest: usize) {
             auxf::check_bounds(&source, &dest, self.vertices.len());            
-            if weight <= self.max_weight { 
-                self.vertices[source].disconnect_from(dest, weight, self.vert_bit_indexing, self.partition);
-            } else {
-                panic!("ERROR: from disconnect() -> wieght exceeds max wieght")
-            } 
+            self.vertices[source].disconnect_from(dest, self.vert_bit_indexing, self.partition);
         }
 
         pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 

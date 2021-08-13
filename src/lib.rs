@@ -7,7 +7,17 @@ use std::thread::JoinHandle;
 
 #[cfg(test)]
 mod tests {
-    
+    /*
+        COMPLEX VS SIMPLE ...
+        complex: USUALLY dealing with edgeverts.len() >= 2
+        simple:a USUALLY dealing with edgeverts.len() == 1
+
+        terminology: vXevY is a way to define an edgevert number
+        where 'X' is the index of the 'vertex' and 'Y' is the
+        index of the 'edgevert'. For example, v0ev2 means get
+        the edgevert of vertex[0] at edgevert[2].
+
+    */
     use super::*;
 
     #[derive(Clone)]
@@ -15,10 +25,6 @@ mod tests {
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
-    #[test]
-    fn simple_disconnect1() {
-        assert!(false); // unimplemented...
-    }
 
     #[test]
     fn simple_remove4() { // BIT CIRCLE
@@ -170,6 +176,35 @@ mod tests {
         bg_same.add(NoData);
         bg_same.connect(0, 2, 0);
         assert!(bg_same.is_connected(0, 2));
+    }
+
+
+    #[test]
+    fn simple_add_copies1() {
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 10);
+        bg_same.add_copies(NoData, 10);
+        assert_eq!(10, bg_same.size());
+        bg_same.add_copies(NoData, 10);
+        assert_eq!(20, bg_same.size());
+    }
+
+    #[test]
+    fn simple_disconnect1() {
+        
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, 4);
+        bg_same.add_copies(NoData, 4);
+
+        for v in 0..4 { bg_same.connect(0, v, 0); } // v0ev0: .... 0000 1111
+        // vXevY @ 'POST REMOVAL'
+        bg_same.disconnect(0, 3); // v0ev0: .... 0000 0111
+        assert_eq!(7, bg_same.ev_num_at(0,0));
+        bg_same.disconnect(0, 2); // v0ev0: .... 0000 0011
+        assert_eq!(3, bg_same.ev_num_at(0,0));
+        bg_same.disconnect(0, 1); // v0ev0: .... 0000 0001
+        assert_eq!(1, bg_same.ev_num_at(0,0));
+        bg_same.disconnect(0, 0); // v0ev0: .... 0000 0000
+        assert_eq!(0, bg_same.ev_num_at(0,0));
+
     }
 
     #[test]
@@ -333,9 +368,9 @@ mod tests {
         assert_eq!(1, bg_same.ev_num_at(3, 0));
     }
 
+    // Testing many edgevert lenghts.... This takes a long time
     #[test] 
-    fn complex_ev_len_at1() {
-        
+    fn complex_ev_len_at1() {        
         pub fn test_for_many_verts(vert_amt: usize, bg: BitGraph<NoData>, es: usize) { 
             let num: usize;
             if vert_amt % (BITS / es) != 0 {
@@ -352,7 +387,7 @@ mod tests {
             for _ in 0..c { bg.add(NoData); }
         }
 
-        for cap in 1..1_000 {
+        for cap in 1..2_048 {
 
             let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, cap);
             let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, cap);
@@ -405,11 +440,7 @@ mod tests {
                 Ok(_) => assert!(true),
                 Err(_) => panic!("t6.join() failed"),
             }
-
-
-        }
-
-         
+        }    
     }
 
     #[test]
