@@ -5,7 +5,7 @@ A graph data structured utilizes special encoding/deconding methods to represent
 let bg1: BitGraph<NoData> = BitGraph::new(EdgeScale::SAME);
 let bg2: BitGraph<String> = BitGraph::new(EdgeScale::U8);
 let bg3: BitGraph<i8> = BitGraph::new(EdgeScale::U4);
-``` 
+```` 
 ## Types of BitGraphs
 There are currently 6 types of BitGraphs (all types have _unsigned_ weights):
 * `SAME`: max weight = 0 = 2^__0__ - 1
