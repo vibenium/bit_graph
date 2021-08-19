@@ -14,4 +14,5 @@ There are currently 6 types of BitGraphs (all types have _unsigned_ weights):
 * `U8`: max weight = 127 = 2^__(8 - 1)__ - 1
 * `U16`: max weight = 32,767 = 2^__(16 - 1)__ - 1 
 * `U32`: max weight = 2,147,483,647 = 2^__(32 - 1)__ - 1
+
 The motivation behind this design is to keep 
