@@ -222,7 +222,7 @@ mod tests {
         // to get exactly 2 edgeverts for all vertices.
         let bits2: usize = BITS / 8 + 1;
         let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, bits2); 
-        for _ in 0..bits2 { bg_u8.add(NoData); }
+        for _ in 0..=bits2 { bg_u8.add(NoData); }
 
         // checking for exactly 2 edgeverts per vertex
         for x in 0..bits2 { assert_eq!(2, bg_u8.ev_len_at(x)); }
@@ -231,11 +231,12 @@ mod tests {
         // {0} --> {bits2 - 1 = 8} with weight 122
         // {0} --> {bits2 = 9} with weight 16
         // {0} --> {bits2 + 1 = 9} with weight 70
-          
+        
         bg_u8.connect(0, bits2 - 1, 122);
-        bg_u8.add(NoData); // need to add extra here, or it will panic
+        // bg_u8.add(NoData); // need to add extra here, or it will panic
         assert_eq!(250, bg_u8.ev_num_at(0, 1));   
 
+        // Connecting from v0 to v9 (which is in edgevert1)
         bg_u8.connect(0, bits2, 16);
         bg_u8.add(NoData); // same here
         assert_eq!(37_114, bg_u8.ev_num_at(0, 1));   
