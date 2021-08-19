@@ -25,8 +25,43 @@ mod tests {
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
-
     #[test]
+    fn complex_remove1() { // testing for connections across 2 edgeverts (0 to 1)
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, BITS * 2);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, BITS * 2);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, BITS * 2);
+
+        for _ in 0..(BITS * 2) { bg_same.add(NoData); }
+        for _ in 0..BITS { bg_binary.add(NoData); }
+        for _ in 0..(BITS / 2) { bg_u4.add(NoData); } 
+       
+        // sanity check
+        assert_eq!(BITS * 2, bg_same.size());
+        assert_eq!(BITS, bg_binary.size());
+        assert_eq!(BITS / 2, bg_u4.size());
+
+        // middle ev0 to middle ev1
+        bg_same.connect(BITS / 2 - 1, (BITS * 3) / 2 - 1, 0);
+        bg_binary.connect(BITS / 4 - 1, (BITS * 3) / 4 - 1, 1); 
+        bg_u4.connect(BITS / 8 - 1, (BITS * 3) / 8 - 1, 7);
+
+        // another sanity check
+        assert!(bg_same.is_connected(BITS / 2 - 1, (BITS * 3) / 2 - 1));
+        assert!(bg_binary.is_connected(BITS / 4 - 1, (BITS * 3) / 4 - 1));
+        assert!(bg_u4.is_connected(BITS / 8 - 1, (BITS * 3) / 8 - 1));
+
+        // where the fun begins (i.e., removing the middle bits at ev1)
+        bg_same.remove((BITS * 3) / 2 - 1);
+        bg_binary.remove((BITS * 3) / 4 - 1);
+        bg_u4.remove((BITS * 3) / 8 - 1);
+
+        assert_eq!(bg_same.ev_num_at(BITS / 2 - 1, 1), 0);
+        assert_eq!(bg_binary.ev_num_at(BITS / 4 - 1, 1), 0);
+        assert_eq!(bg_u4.ev_num_at(BITS / 8 - 1, 1), 0);
+
+    }
+
+
     fn simple_remove4() { // BIT CIRCLE
         // utilizing all bits
         let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, BITS);

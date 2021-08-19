@@ -103,31 +103,12 @@ pub mod bit_graph {
             let compd_vn_bit_pos: usize = (vertex % vbi) * partition_size;
             let start: usize = vertex / vbi;
             let end: usize = self.edgevert.len() - 1;
-
-            // DEBUG statements
-            /*
-                println!("FORALL edgeverts in vertex({})...\n", self.vertnum);
-                println!("@ vertex({}), edgevert = {}", self.vertnum, self.edgevert[start]);
-                println!("vbi = {}\ncompd_vn_bit_pos = {}\n", vbi, compd_vn_bit_pos);
-                println!("partition_size = {}\nstart = {}\nend = {}\n", partition_size, start, end);
-            */
+            // DEBUG statements part1...
             // saved data mask scalar
             // used for saving data after deleted vertex+weight
             let saved_data_mask: usize = self.edgevert[start] & !(usize::MAX 
                     >> (bits - compd_vn_bit_pos - partition_size));
-            
-            // DEBUG statements
-            /*
-                println!("saved_data_mask = {}", saved_data_mask);
-                println!("!(usize::MAX >> (bits - compd_vn_bit_pos - partition_size)) = {}", 
-                    !(usize::MAX >> (bits - compd_vn_bit_pos - partition_size)));
-                println!("usize::MAX >> (bits - comd_vn_bit_pos - partition_size) = {}", 
-                    usize::MAX >> (bits - compd_vn_bit_pos - partition_size));
-                println!("self.edgevert[start] & (usize::MAX >> (bits - compd_vn_bit_pos)) = {}", 
-                    self.edgevert[start] & (usize::MAX >> (bits - compd_vn_bit_pos)));
-                println!("self.edgevert[start] | (saved_data_mask >> partition_size) = {}\n",
-                    self.edgevert[start] | (saved_data_mask >> partition_size));
-            */
+            // DEBUG statements part2...
             // delete everything from vertex+weight and onward...
             // Not subtracting partition_size to delete selected vertex+weight 
             self.edgevert[start] &= usize::MAX >> (bits - compd_vn_bit_pos); // <- THE PROBLEM!!!
