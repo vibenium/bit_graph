@@ -111,20 +111,26 @@ pub mod bit_graph {
             // DEBUG statements part2...
             // delete everything from vertex+weight and onward...
             // Not subtracting partition_size to delete selected vertex+weight 
-            self.edgevert[start] &= usize::MAX >> (bits - compd_vn_bit_pos); // <- THE PROBLEM!!!
+            self.edgevert[start] &= usize::MAX >> (bits - compd_vn_bit_pos);
             // insert and shift saved data to edgevert
             self.edgevert[start] |= saved_data_mask >> partition_size;
             
-            if start < end { // CURRENTLY NOT BEING TESTED
+            if start < end { // May have bugs.
+                // The mask for acquiring bits from next edgevert
                 let m1: usize = usize::MAX >> (bits - partition_size);
+                // moving bits from next edgevert into the 'start' edgevert
                 self.edgevert[start] |= (self.edgevert[start + 1] & m1) 
-                  << compd_vn_bit_pos;
-                  for e in (start + 1)..end {
-                      self.edgevert[e] >> partition_size;
-                      self.edgevert[e] |= (self.edgevert[e + 1] & m1)
+                  << compd_vn_bit_pos; 
+                // All edgeverts till 'end': shift, replace, repeat...  
+                for e in (start + 1)..end { 
+                    self.edgevert[e] >> partition_size;
+                    self.edgevert[e] |= (self.edgevert[e + 1] & m1)
                         << compd_vn_bit_pos;
                   }
-                  self.edgevert[end] >> partition_size;
+                // a final shift at the end is needed without a replacement
+                // since the end edgevert does not have another proceeding
+                // edgevert to extract bits from.
+                self.edgevert[end] >> partition_size;
             }
                       
         }
