@@ -26,7 +26,7 @@ There are currently 6 types of BitGraphs (all types have _unsigned_ weights):
         bits: usize, 
     }
 ````
-
+* `vertices` _->_ a vector of type Vertex<T>
 ## The 'Vertex' struct
 ````rust
     #[derive(Debug, Clone)]
