@@ -24,12 +24,13 @@ mod tests {
     struct NoData;
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
+    
 
     // WARNING: U32 is not being tested at the moment. On my machine BITS = 64.
     // When using U32, certain values reach 64. For some reason, this cause issues
     // with how the bits are shifted, causing the bg_u32 to 'miss' removing and
     // replacing the bits in ev1.
-    #[test] // U8, U16, U32
+    #[test] // U8, U16, !!!U32!!!
     fn complex_remove2() { // testing for connections across 2 edgeverts (0 to 1)
         let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, BITS * 2);
         let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, BITS * 2);

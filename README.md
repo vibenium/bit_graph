@@ -15,4 +15,27 @@ There are currently 6 types of BitGraphs (all types have _unsigned_ weights):
 * `U16`: max weight = 32,767 = 2^__(16 - 1)__ - 1 
 * `U32`: max weight = 2,147,483,647 = 2^__(32 - 1)__ - 1
 
-The motivation behind this design is to keep 
+## The 'BitGraph' struct
+````rust
+    #[derive(Debug, Clone)]
+    pub struct BitGraph<T> {
+        vertices: Vec<Vertex<T>>,
+        vert_bit_indexing: usize,
+        max_weight: usize,
+        partition: usize, 
+        bits: usize, 
+    }
+````
+
+## The 'Vertex' struct
+````rust
+    #[derive(Debug, Clone)]
+    struct Vertex<T> {
+        data: T,
+        vertnum: usize,
+        edgevert: Vec<usize>
+    }
+````
+## What are edgeverts?
+
+The motivation behind this design is to keep an evenly partitioned scheme within the bits of each edgevert in a `Vertex` struct.
