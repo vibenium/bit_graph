@@ -109,13 +109,15 @@ pub mod bit_graph {
             let saved_data_mask: usize = self.edgevert[start] & !(usize::MAX 
                     >> (bits - compd_vn_bit_pos - partition_size));
             // DEBUG statements part2...
+            println!("(bits - compd_vn_bit_pos) = {}", bits - compd_vn_bit_pos);
             // delete everything from vertex+weight and onward...
             // Not subtracting partition_size to delete selected vertex+weight 
-            self.edgevert[start] &= usize::MAX >> (bits - compd_vn_bit_pos);
+            // '% bits' helps avoid a right shift overflow
+            self.edgevert[start] &= usize::MAX >> ((bits - compd_vn_bit_pos) % bits);
             // insert and shift saved data to edgevert
             self.edgevert[start] |= saved_data_mask >> partition_size;
             
-            if start < end { // May have bugs.
+            if start < end {
                 // The mask for acquiring bits from next edgevert
                 let m1: usize = usize::MAX >> (bits - partition_size);
                 // moving bits from next edgevert into the 'start' edgevert
@@ -123,14 +125,14 @@ pub mod bit_graph {
                   << compd_vn_bit_pos; 
                 // All edgeverts till 'end': shift, replace, repeat...  
                 for e in (start + 1)..end { 
-                    self.edgevert[e] >> partition_size;
+                    self.edgevert[e] >>= partition_size;
                     self.edgevert[e] |= (self.edgevert[e + 1] & m1)
                         << compd_vn_bit_pos;
                   }
                 // a final shift at the end is needed without a replacement
                 // since the end edgevert does not have another proceeding
                 // edgevert to extract bits from.
-                self.edgevert[end] >> partition_size;
+                self.edgevert[end] >>= partition_size;
             }
                       
         }
@@ -422,10 +424,14 @@ pub mod bit_graph {
             }
 
             for v in 0..vertex { // pre vertex work
+                // Debug
+                println!("v = {}", v);
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
             }
             // This loop does not happen if vertex == (self.vertices.len() - 1)
             for v in (vertex + 1)..len { // post vertex work
+                // Debug
+                println!("v = {}", v);
                 self.vertices[v].dec_vn();
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
             }
