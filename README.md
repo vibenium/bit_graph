@@ -15,30 +15,33 @@ There are currently 6 types of BitGraphs (all types have _unsigned_ weights):
 * `U16`: max weight = 32,767 = 2^__(16 - 1)__ - 1 
 * `U32`: max weight = 2,147,483,647 = 2^__(32 - 1)__ - 1
 
+## The 'Vertex' struct
+vertices (or nodes) within a `BitGraph`
+````rust
+#[derive(Debug, Clone)]
+struct Vertex<T> {
+  data: T,
+  vertnum: usize,
+  edgevert: Vec<usize>
+}
+````
+## What is a vertnum?
+A vertnum is a single number that represents the indexing number of the current `Vertex<T>`. This is important for several types of functionality. See more in __src/bg.rs__
+## What are edgeverts?
+An `edgevert` is where the current `Vertex<T>` at _index_ `vertnum` will contains a vector of numbers with the weight and vertex number destination are encoded. This information is crucial for containing important information on outgoing edges from the current `Vertex<T>` at _index_ `vertnum`.
+
 ## The 'BitGraph' struct
 ````rust
-    #[derive(Debug, Clone)]
-    pub struct BitGraph<T> {
-        vertices: Vec<Vertex<T>>,
-        vert_bit_indexing: usize,
-        max_weight: usize,
-        partition: usize, 
-        bits: usize, 
-    }
+#[derive(Debug, Clone)]
+pub struct BitGraph<T> {
+  vertices: Vec<Vertex<T>>,
+  vert_bit_indexing: usize,
+  max_weight: usize,
+  partition: usize, 
+  bits: usize, 
+}
 ````
 * `vertices`: A vector of type `Vertex<T>`
 * `vert_bit_indexing`: The machines bits divided by `partition`. Used for indexing the vertex bit position in any given `Vertex<T>`'s `edgevert` vector. This is primarily used to keep the bit position of the vertex within a its range of bits. For instance, in binary, `SAME` = 1, `BINARY` = 10, `U4` = 1000, `U8` = 10000000, etc. Every _1_ is where the `vert_bit_indexing` (or `vbi` for short) lies within every `edgevert`. 
 * `max_weight`: The maximum weight of any vertex within the constructed `BitGraph<T>`. This number is useful for checking if a given weight is within the specified range (which is completely dependent on the chosen `EdgeScale`).
-* `partition`: The amount of bits occupied for the `vbi` and the weight for a single representation of a connection from the `vertnum` vertex to the destination `vertnum` (i.e., using the array analogy from the intro of thisREADME, the connection of the array indices encoded in a few numbers, `edgevert`'s).
-## The 'Vertex' struct
-````rust
-    #[derive(Debug, Clone)]
-    struct Vertex<T> {
-        data: T,
-        vertnum: usize,
-        edgevert: Vec<usize>
-    }
-````
-## What are edgeverts?
-
-The motivation behind this design is to keep an evenly partitioned scheme within the bits of each edgevert in a `Vertex` struct.
+* `partition`: The amount of bits occupied for the `vbi` and the weight for a single representation of a connection from the `vertnum` vertex to the destination `vertnum` (i.e., using the array analogy from the intro of thisREADME, the connection of the array indices encoded in a few numbers, A.K.A, `edgevert`).
