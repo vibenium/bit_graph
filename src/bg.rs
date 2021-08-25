@@ -101,38 +101,41 @@ pub mod bit_graph {
             
             let vbi: usize = bits / partition_size;
             let compd_vn_bit_pos: usize = (vertex % vbi) * partition_size;
-            let start: usize = vertex / vbi;
-            let end: usize = self.edgevert.len() - 1;
+            let ev_start: usize = vertex / vbi;
+            let ev_end: usize = self.edgevert.len() - 1;
             // DEBUG statements part1...
             // saved data mask scalar
             // used for saving data after deleted vertex+weight
-            let saved_data_mask: usize = self.edgevert[start] & !(usize::MAX 
+            let saved_data_mask: usize = self.edgevert[ev_start] & !(usize::MAX 
                     >> (bits - compd_vn_bit_pos - partition_size));
             // DEBUG statements part2...
-            println!("(bits - compd_vn_bit_pos) = {}", bits - compd_vn_bit_pos);
+            // println!("(bits - compd_vn_bit_pos) = {}", bits - compd_vn_bit_pos);
             // delete everything from vertex+weight and onward...
             // Not subtracting partition_size to delete selected vertex+weight 
             // '% bits' helps avoid a right shift overflow
-            self.edgevert[start] &= usize::MAX >> ((bits - compd_vn_bit_pos) % bits);
-            // insert and shift saved data to edgevert
-            self.edgevert[start] |= saved_data_mask >> partition_size;
-            
-            if start < end {
+            if  compd_vn_bit_pos != 0 { // to avoid overflow 
+                self.edgevert[ev_start] &= usize::MAX >> (bits - compd_vn_bit_pos);
+                // self.edgevert[ev_start] &= usize::MAX >> (bits - compd_vn_bit_pos);
+                // insert and shift saved data to edgevert
+                println!("saved_data_mask = {}", saved_data_mask);
+                self.edgevert[ev_start] |= saved_data_mask >> partition_size;
+            }
+            if ev_start < ev_end {
                 // The mask for acquiring bits from next edgevert
                 let m1: usize = usize::MAX >> (bits - partition_size);
                 // moving bits from next edgevert into the 'start' edgevert
-                self.edgevert[start] |= (self.edgevert[start + 1] & m1) 
+                self.edgevert[ev_start] |= (self.edgevert[ev_start + 1] & m1) 
                   << compd_vn_bit_pos; 
                 // All edgeverts till 'end': shift, replace, repeat...  
-                for e in (start + 1)..end { 
+                for e in (ev_start + 1)..ev_end { 
                     self.edgevert[e] >>= partition_size;
                     self.edgevert[e] |= (self.edgevert[e + 1] & m1)
                         << compd_vn_bit_pos;
-                  }
+                }
                 // a final shift at the end is needed without a replacement
                 // since the end edgevert does not have another proceeding
                 // edgevert to extract bits from.
-                self.edgevert[end] >>= partition_size;
+                self.edgevert[ev_end] >>= partition_size;
             }
                       
         }
@@ -418,24 +421,27 @@ pub mod bit_graph {
             conditionals.
         */
         pub fn remove(&mut self, vertex: usize) {
-            let len: usize = self.vertices.len();
+            let mut len: usize = self.vertices.len();
             if vertex >= len {
                 panic!("cannot remove non-existent element");
             }
 
             for v in 0..vertex { // pre vertex work
                 // Debug
-                println!("v = {}", v);
-                self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
-            }
-            // This loop does not happen if vertex == (self.vertices.len() - 1)
-            for v in (vertex + 1)..len { // post vertex work
-                // Debug
-                println!("v = {}", v);
-                self.vertices[v].dec_vn();
+                println!("v1 = {}", v);
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
             }
             self.vertices.remove(vertex); // Finally, removing the vertex
+            // This loop does not happen if vertex == (self.vertices.len() - 1)
+            len -= 1;
+            // fails here for complex_remove2
+            for v in vertex..len { // post vertex work
+                // Debug
+                println!("v2 = {}", v);
+                self.vertices[v].dec_vn();
+                self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
+            }
+            //self.vertices.remove(vertex); // Finally, removing the vertex
         }
     }
 
