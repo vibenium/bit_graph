@@ -21,6 +21,8 @@ pub mod bit_graph {
         pub fn get_ev_size(&self) -> usize { self.edgevert.len() }
         // retrieving the edgevert itself (maybe only use for debugging purposes)
         pub fn get_ev_num(&self, idx: usize) -> usize { self.edgevert[idx] } 
+        
+        pub fn dec_ev(&mut self) { self.edgevert.pop(); }
 
         /*
             connect_to: This function establishes a connection between a source and destination vertex.
@@ -121,6 +123,7 @@ pub mod bit_graph {
                 self.edgevert[ev_start] |= saved_data_mask >> partition_size;
             }
             if ev_start < ev_end {
+                println!("IM ALIVE");
                 // The mask for acquiring bits from next edgevert
                 let m1: usize = usize::MAX >> (bits - partition_size);
                 // moving bits from next edgevert into the 'start' edgevert
@@ -420,28 +423,40 @@ pub mod bit_graph {
             connections with 'vertex'. There are 2 loops to reduce redundant 
             conditionals.
         */
+        
         pub fn remove(&mut self, vertex: usize) {
             let mut len: usize = self.vertices.len();
             if vertex >= len {
                 panic!("cannot remove non-existent element");
             }
-
+            // For when the other edgeverts are not needed
+            // It helps create symmetry for the graph.
+            let needs_ev_dec = match (len - 1) % self.vert_bit_indexing {
+                0 => true,
+                _ => false,
+            };
             for v in 0..vertex { // pre vertex work
                 // Debug
                 println!("v1 = {}", v);
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
+                if needs_ev_dec {
+                    self.vertices[v].dec_ev();
+                }
             }
             self.vertices.remove(vertex); // Finally, removing the vertex
             // This loop does not happen if vertex == (self.vertices.len() - 1)
             len -= 1;
-            // fails here for complex_remove2
+             
             for v in vertex..len { // post vertex work
                 // Debug
                 println!("v2 = {}", v);
                 self.vertices[v].dec_vn();
                 self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
+                if needs_ev_dec {
+                    self.vertices[v].dec_ev();
+                }
             }
-            //self.vertices.remove(vertex); // Finally, removing the vertex
+           
         }
     }
 

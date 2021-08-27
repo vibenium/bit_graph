@@ -25,85 +25,166 @@ mod tests {
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
+    #[test]
+    fn complex_remove3() {
 
-    // WARNING: U32 is not being tested at the moment. On my machine BITS = 64.
-    // When using U32, certain values reach 64. For some reason, this cause issues
-    // with how the bits are shifted, causing the bg_u32 to 'miss' removing and
-    // replacing the bits in ev1.
-    #[test] // U8, U16, !!!U32!!!
-    fn complex_remove2() { // testing for connections across 2 edgeverts (0 to 1)
-        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, BITS * 2);
-        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, BITS * 2);
-        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, BITS * 2);
-        
-        // Initializing graphs
-        for _ in 0..(BITS / 4) { bg_u8.add(NoData); }
-        for _ in 0..(BITS / 8) { bg_u16.add(NoData); }
-        for _ in 0..(BITS / 16) { bg_u32.add(NoData); }
+        const same_size: usize = BITS * 2;
+        const binary_size: usize = BITS;
+        const u4_size: usize = BITS / 2;
+        const u8_size: usize = BITS / 4;
+        const u16_size: usize = BITS / 8;
+        const u32_size: usize = BITS / 16;
+
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, same_size);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, binary_size);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, u4_size);
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, u8_size);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, u16_size);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, u32_size);
+
+        for v in 0..same_size { bg_same.add(NoData); }
+        for v in 0..binary_size { bg_binary.add(NoData); }
+        for v in 0..u4_size { bg_u4.add(NoData); }
+        for v in 0..u8_size { bg_u8.add(NoData); }
+        for v in 0..u16_size { bg_u16.add(NoData); }
+        for v in 0..u32_size { bg_u32.add(NoData); }
 
         // sanity check
-        assert_eq!(BITS / 4, bg_u8.size());
-        assert_eq!(BITS / 8, bg_u16.size());
-        assert_eq!(BITS / 16, bg_u32.size());
+        for v in 0..same_size { assert_eq!(bg_same.ev_len_at(v), 2); }
+        for v in 0..binary_size { assert_eq!(bg_binary.ev_len_at(v), 2); }
+        for v in 0..u4_size { assert_eq!(bg_u4.ev_len_at(v), 2); }
+        for v in 0..u8_size { assert_eq!(bg_u8.ev_len_at(v), 2); }
+        for v in 0..u16_size { assert_eq!(bg_u16.ev_len_at(v), 2); }
+        for v in 0..u32_size { assert_eq!(bg_u32.ev_len_at(v), 2); }
+
+        // connecting with max
+        bg_same.connect(BITS / 2 - 1, BITS * 2 - (BITS / 2) - 1, 0);
+        bg_binary.connect(BITS / 4 - 1, BITS - (BITS / 4) - 1, 1);            
+        bg_u4.connect(BITS / 8 - 1, (BITS / 2) - (BITS / 8) - 1, 7);
+        bg_u8.connect(BITS / 16 - 1, (BITS / 4) - (BITS / 16) - 1, 127);
+        bg_u16.connect(BITS / 32 - 1, (BITS / 8) - (BITS / 32) - 1, 32_767);
+        bg_u32.connect(BITS / 64 - 1, (BITS / 16) - (BITS / 64) - 1, 2_147_483_647);
+
+        
+
+    }
+
+    #[test] // U8, U16, U32
+    fn complex_remove2() { // testing for connections across 2 edgeverts (0 to 1)
+
+        // '+ 1' to get the extra edgevert
+        const u8_size: usize = BITS / 8 + 1;
+        const u16_size: usize = BITS / 16 + 1;
+        const u32_size: usize = BITS / 32 + 1;
+
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, u8_size);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, u16_size);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, u32_size);
+        
+        // Initializing graphs
+        for _ in 0..u8_size { bg_u8.add(NoData); }
+        for _ in 0..u16_size { bg_u16.add(NoData); }
+        for _ in 0..u32_size { bg_u32.add(NoData); }
+
+        // sanity check
+        assert_eq!(u8_size, bg_u8.size());
+        assert_eq!(u16_size, bg_u16.size());
+        assert_eq!(u32_size, bg_u32.size());
         
         // middle ev0 to middle ev1. weights are at max
-        bg_u8.connect(BITS / 16 - 1, (BITS * 3) / 16 - 1, 127);
-        bg_u16.connect(BITS / 32 - 1, (BITS * 3) / 32 - 1, 32_767); 
-        bg_u32.connect(BITS / 64 - 1, (BITS * 3) / 64 - 1, 2_147_483_647);
- 
-        // another sanity check
-        assert!(bg_u8.is_connected(BITS / 16 - 1, (BITS * 3) / 16 - 1));
-        assert_eq!(bg_u8.ev_num_at(BITS / 16 - 1, 1), 4278190080);
-        assert!(bg_u16.is_connected(BITS / 32 - 1, (BITS * 3) / 32 - 1));
-        assert_eq!(bg_u16.ev_num_at(BITS / 32 - 1, 1), 4294901760); 
-        assert!(bg_u32.is_connected(BITS / 64 - 1, (BITS * 3) / 64 - 1));
-        assert_eq!(bg_u32.ev_num_at(BITS / 64 - 1, 1), 4294967295); 
-        
-        // where the fun begins (i.e., removing the middle bits at ev1)
-        //bg_u8.remove((BITS * 3) / 16 - 1);
-        //bg_u16.remove((BITS * 3) / 32 - 1);
-        bg_u32.remove((BITS * 3) / 64 - 1);
+        bg_u8.connect(0, u8_size - 1, 127);
+        bg_u16.connect(0, u16_size - 1, 32_767); 
+        bg_u32.connect(0, u32_size - 1, 2_147_483_647);
 
-        //assert_eq!(bg_u8.ev_num_at(BITS / 16 - 1, 1), 0);
-        //assert_eq!(bg_u16.ev_num_at(BITS / 32 - 1, 1), 0);
-        assert_eq!(bg_u32.ev_num_at(BITS / 64 - 1, 1), 0); // currently FIALS 
-    
+        // another sanity check
+        assert!(bg_u8.is_connected(0, u8_size - 1));
+        assert!(bg_u16.is_connected(0, u16_size - 1));
+        assert!(bg_u32.is_connected(0, u32_size - 1));
+
+        // and another sanity check...
+        assert_eq!(bg_u8.ev_num_at(0, 1), 0xff); // ...._1111_1111
+        assert_eq!(bg_u16.ev_num_at(0, 1), 0xffff); // ...._1111_1111_1111_1111 
+        assert_eq!(bg_u32.ev_num_at(0, 1), 0xffffffff); // 32 1's :)
+
+
+        // sanity check for size of edgeverts
+        for v in 0..u8_size { assert_eq!(bg_u8.ev_len_at(v), 2); }
+        for v in 0..u16_size { assert_eq!(bg_u16.ev_len_at(v), 2); }
+        for v in 0..u32_size { assert_eq!(bg_u32.ev_len_at(v), 2); }
+ 
+        // where the fun begins (i.e., removing the middle bits at ev1)
+        bg_u8.remove(u8_size - 1);
+        bg_u16.remove(u16_size - 1);
+        bg_u32.remove(u32_size - 1);
+
+        // sanity checking non connected vertices within ev0
+        assert_eq!(bg_u8.ev_num_at(0, 0), 0);
+        assert_eq!(bg_u16.ev_num_at(0, 0), 0);
+        assert_eq!(bg_u32.ev_num_at(0, 0), 0);
+
+        // should be '1' for all since removing till no need for an extra edgevert
+        for v in 0..(u8_size - 1) { assert_eq!(bg_u8.ev_len_at(v), 1); }
+        for v in 0..(u16_size - 1) { assert_eq!(bg_u16.ev_len_at(v), 1); }
+        for v in 0..(u32_size - 1) { assert_eq!(bg_u32.ev_len_at(v), 1); }
+
     }
 
     #[test] // SAME, BINARY, U4
     fn complex_remove1() { // testing for connections across 2 edgeverts (0 to 1)
-        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, BITS * 2);
-        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, BITS * 2);
-        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, BITS * 2);
+
+        // '+ 1' to get the extra edgevert
+        const same_size: usize = BITS + 1;
+        const binary_size: usize = BITS / 2 + 1;
+        const u4_size: usize = BITS / 4 + 1;
+        
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, same_size);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, binary_size);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, u4_size);
 
         // Initializing graphs
-        for _ in 0..(BITS * 2) { bg_same.add(NoData); }
-        for _ in 0..BITS { bg_binary.add(NoData); }
-        for _ in 0..(BITS / 2) { bg_u4.add(NoData); } 
+        for _ in 0..same_size { bg_same.add(NoData); }
+        for _ in 0..binary_size { bg_binary.add(NoData); }
+        for _ in 0..u4_size { bg_u4.add(NoData); } 
        
         // sanity check
-        assert_eq!(BITS * 2, bg_same.size());
-        assert_eq!(BITS, bg_binary.size());
-        assert_eq!(BITS / 2, bg_u4.size());
+        assert_eq!(same_size, bg_same.size());
+        assert_eq!(binary_size, bg_binary.size());
+        assert_eq!(u4_size, bg_u4.size());
 
-        // middle ev0 to middle ev1
-        bg_same.connect(BITS / 2 - 1, (BITS * 3) / 2 - 1, 0);
-        bg_binary.connect(BITS / 4 - 1, (BITS * 3) / 4 - 1, 1); 
-        bg_u4.connect(BITS / 8 - 1, (BITS * 3) / 8 - 1, 7);
+        // from v0 to v(BITS / EdgeScale) with max weights  
+        bg_same.connect(0, same_size - 1, 0);
+        bg_binary.connect(0, binary_size - 1, 1); 
+        bg_u4.connect(0, u4_size - 1, 7);
 
         // another sanity check
-        assert!(bg_same.is_connected(BITS / 2 - 1, (BITS * 3) / 2 - 1));
-        assert!(bg_binary.is_connected(BITS / 4 - 1, (BITS * 3) / 4 - 1));
-        assert!(bg_u4.is_connected(BITS / 8 - 1, (BITS * 3) / 8 - 1));
+        assert!(bg_same.is_connected(0, same_size - 1));
+        assert!(bg_binary.is_connected(0, binary_size - 1));
+        assert!(bg_u4.is_connected(0, u4_size - 1));
 
+        // and another sanity check...
+        assert_eq!(bg_same.ev_num_at(0, 1), 1); // ...._0001
+        assert_eq!(bg_binary.ev_num_at(0, 1), 3); // ...._0011
+        assert_eq!(bg_u4.ev_num_at(0, 1), 15); // ...._1111
+
+        // sanity check for size of edgeverts
+        for v in 0..same_size { assert_eq!(bg_same.ev_len_at(v), 2); }
+        for v in 0..binary_size { assert_eq!(bg_binary.ev_len_at(v), 2); }
+        for v in 0..u4_size { assert_eq!(bg_u4.ev_len_at(v), 2); }
+         
         // where the fun begins (i.e., removing the middle bits at ev1)
-        bg_same.remove((BITS * 3) / 2 - 1);
-        bg_binary.remove((BITS * 3) / 4 - 1);
-        bg_u4.remove((BITS * 3) / 8 - 1);
+        bg_same.remove(same_size - 1);
+        bg_binary.remove(binary_size - 1);
+        bg_u4.remove(u4_size - 1);
 
-        assert_eq!(bg_same.ev_num_at(BITS / 2 - 1, 1), 0);
-        assert_eq!(bg_binary.ev_num_at(BITS / 4 - 1, 1), 0);
-        assert_eq!(bg_u4.ev_num_at(BITS / 8 - 1, 1), 0);
+        // sanity checking non connected vertices within ev0
+        assert_eq!(bg_same.ev_num_at(0, 0), 0);
+        assert_eq!(bg_binary.ev_num_at(0, 0), 0);
+        assert_eq!(bg_u4.ev_num_at(0, 0), 0);
+
+        // should be '1' for all since removing till no need for an extra edgevert
+        for v in 0..(same_size - 1) { assert_eq!(bg_same.ev_len_at(v), 1); }
+        for v in 0..(binary_size - 1) { assert_eq!(bg_binary.ev_len_at(v), 1); }
+        for v in 0..(u4_size - 1) { assert_eq!(bg_u4.ev_len_at(v), 1); }
 
     }
     
