@@ -24,9 +24,140 @@ mod tests {
     struct NoData;
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
+   
+
+    #[test] // for vertnum after removing (all vertices have 4 edgeverts)
+    fn complex_get_vn1() {
+ 
+        const same_size: usize = BITS * 4;
+        const binary_size: usize = BITS * 2;
+        const u4_size: usize = BITS;
+        const u8_size: usize = BITS / 2;
+        const u16_size: usize = BITS / 4;
+        const u32_size: usize = BITS / 8;
+
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, same_size);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, binary_size);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, u4_size);
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, u8_size);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, u16_size);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, u32_size);
+
+        for v in 0..same_size { bg_same.add(NoData); }
+        for v in 0..binary_size { bg_binary.add(NoData); }
+        for v in 0..u4_size { bg_u4.add(NoData); }
+        for v in 0..u8_size { bg_u8.add(NoData); }
+        for v in 0..u16_size { bg_u16.add(NoData); }
+        for v in 0..u32_size { bg_u32.add(NoData); }
+
+        // sanity checking edgevert lengths
+        for v in 0..same_size {
+            assert_eq!(4, bg_same.ev_len_at(v));
+            if v < binary_size {
+                assert_eq!(4, bg_binary.ev_len_at(v));
+            }
+            if v < u4_size {
+                assert_eq!(4, bg_u4.ev_len_at(v));
+            }
+            if v < u8_size {
+                assert_eq!(4, bg_u8.ev_len_at(v));
+            }
+            if v < u16_size {
+                assert_eq!(4, bg_u16.ev_len_at(v));
+            }
+            if v < u32_size {
+                assert_eq!(4, bg_u32.ev_len_at(v));
+            }
+
+        }
+
+        // Testing get_vn()
+        for _ in 0..same_size {
+            for v in 0..bg_same.size() { assert_eq!(v, bg_same.get_vn(v)); }
+            bg_same.remove(0);
+        }
+        for _ in 0..binary_size {
+            for v in 0..bg_binary.size() { assert_eq!(v, bg_binary.get_vn(v)); }
+            bg_binary.remove(0);
+        }
+        for _ in 0..u4_size {
+            for v in 0..bg_u4.size() { assert_eq!(v, bg_u4.get_vn(v)); }
+            bg_u4.remove(0);
+        }
+        for _ in 0..u8_size {
+            for v in 0..bg_u8.size() { assert_eq!(v, bg_u8.get_vn(v)); }
+            bg_u8.remove(0);
+        }
+        for _ in 0..u16_size {
+            for v in 0..bg_u16.size() { assert_eq!(v, bg_u16.get_vn(v)); }
+            bg_u16.remove(0);
+        }
+        for _ in 0..u32_size {
+            for v in 0..bg_u32.size() { assert_eq!(v, bg_u32.get_vn(v)); }
+            bg_u32.remove(0);
+        } 
+        assert_eq!(0, bg_same.size());
+        assert_eq!(0, bg_binary.size());
+        assert_eq!(0, bg_u4.size());
+        assert_eq!(0, bg_u8.size());
+        assert_eq!(0, bg_u16.size());
+        assert_eq!(0, bg_u32.size());
+    }
 
     #[test]
-    fn complex_remove3() {
+    fn simple_get_vn1() {
+ 
+        const same_size: usize = BITS;
+        const binary_size: usize = BITS / 2;
+        const u4_size: usize = BITS / 4;
+        const u8_size: usize = BITS / 8;
+        const u16_size: usize = BITS / 16;
+        const u32_size: usize = BITS / 32;
+
+        let mut bg_same: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::SAME, same_size);
+        let mut bg_binary: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::BINARY, binary_size);
+        let mut bg_u4: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U4, u4_size);
+        let mut bg_u8: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U8, u8_size);
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, u16_size);
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, u32_size);
+      
+
+        for v in 0..same_size { bg_same.add(NoData); }
+        for v in 0..binary_size { bg_binary.add(NoData); }
+        for v in 0..u4_size { bg_u4.add(NoData); }
+        for v in 0..u8_size { bg_u8.add(NoData); }
+        for v in 0..u16_size { bg_u16.add(NoData); }
+        for v in 0..u32_size { bg_u32.add(NoData); }
+
+        // Testing get_vn()
+        for _ in 0..same_size {
+            for v in 0..bg_same.size() { assert_eq!(v, bg_same.get_vn(v)); }
+            bg_same.remove(0);
+        }
+        for _ in 0..binary_size {
+            for v in 0..bg_binary.size() { assert_eq!(v, bg_binary.get_vn(v)); }
+            bg_binary.remove(0);
+        }
+        for _ in 0..u4_size {
+            for v in 0..bg_u4.size() { assert_eq!(v, bg_u4.get_vn(v)); }
+            bg_u4.remove(0);
+        }
+        for _ in 0..u8_size {
+            for v in 0..bg_u8.size() { assert_eq!(v, bg_u8.get_vn(v)); }
+            bg_u8.remove(0);
+        }
+        for _ in 0..u16_size {
+            for v in 0..bg_u16.size() { assert_eq!(v, bg_u16.get_vn(v)); }
+            bg_u16.remove(0);
+        }
+        for _ in 0..u32_size {
+            for v in 0..bg_u32.size() { assert_eq!(v, bg_u32.get_vn(v)); }
+            bg_u32.remove(0);
+        }
+    }
+
+    #[test]
+    fn complex_remove3() { // enough vertices to fill ev0 and ev1
 
         const same_size: usize = BITS * 2;
         const binary_size: usize = BITS;
@@ -65,7 +196,7 @@ mod tests {
         bg_u16.connect(BITS / 32 - 1, (BITS / 8) - (BITS / 32) - 1, 32_767);
         bg_u32.connect(BITS / 64 - 1, (BITS / 16) - (BITS / 64) - 1, 2_147_483_647);
 
-        
+          
 
     }
 

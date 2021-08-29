@@ -24,6 +24,7 @@ pub mod bit_graph {
         
         pub fn dec_ev(&mut self) { self.edgevert.pop(); }
 
+        pub fn get_vertnum(&self) -> usize { self.vertnum }
         /*
             connect_to: This function establishes a connection between a source and destination vertex.
             It is called from the bitgraphs connect() and try_connect() functions. Establishing the 
@@ -327,6 +328,9 @@ pub mod bit_graph {
                         },
             }
         }
+
+        // For debugging/testing
+        pub fn get_vn(&self, vert_idx: usize) -> usize { self.vertices[vert_idx].get_vertnum() }
 
         pub fn get_partition_size(&self) -> usize { self.partition }
 
