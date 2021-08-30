@@ -15,6 +15,8 @@ pub mod bit_graph {
 
     impl<T> Vertex<T> {
 
+        pub fn get_vert_data(&self) -> T where T : Clone, { self.data.clone() }
+
         // used when more edgeverts are needed to initialize potential connections
         pub fn push_new_ev(&mut self) { self.edgevert.push(0); } // 0x000.....
         // size of the Vector of type usize, edgevert
@@ -176,6 +178,7 @@ pub mod bit_graph {
         use crate::EdgeScale;
 
         // checks if the amount of bits available is enough for a given EdgeScale
+        // WARNING: THIS HAS NOT BEEN rigorously tested...
         pub fn verify_partition_size(scale: &EdgeScale, bits: &usize) {
             if *scale == EdgeScale::U8 && *bits < 8 ||
                 *scale == EdgeScale::U16 && *bits < 16 ||
@@ -327,6 +330,10 @@ pub mod bit_graph {
                             bits: b 
                         },
             }
+        }
+
+        pub fn get_data(&self, vert_idx: usize) -> T where T : Clone, { 
+            self.vertices[vert_idx].get_vert_data() 
         }
 
         // For debugging/testing

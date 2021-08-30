@@ -12,19 +12,35 @@ mod tests {
         complex: USUALLY dealing with edgeverts.len() >= 2
         simple:a USUALLY dealing with edgeverts.len() == 1
 
-        terminology: vXevY is a way to define an edgevert number
+        terminology: vX and evY are ways to define an edgevert number
         where 'X' is the index of the 'vertex' and 'Y' is the
-        index of the 'edgevert'. For example, v0ev2 means get
+        index of the 'edgevert'. For example, v0 and ev2 means get
         the edgevert of vertex[0] at edgevert[2].
-
     */
+
     use super::*;
 
     #[derive(Clone)]
     struct NoData;
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
-   
+
+    #[test]
+    fn simple_get_data1() {
+        
+        let mut animals: BitGraph<&str> = BitGraph::new_with_capacity(EdgeScale::U8, 4);
+        animals.add("Dog");
+        animals.add("Cat");
+        animals.add("Rat");
+        animals.add("Lizard");
+    
+        assert_eq!(animals.size(), 4);
+
+        assert_eq!(animals.get_data(0), "Dog");
+        assert_eq!(animals.get_data(1), "Cat");
+        assert_eq!(animals.get_data(2), "Rat");
+        assert_eq!(animals.get_data(3), "Lizard");
+    }
 
     #[test] // for vertnum after removing (all vertices have 4 edgeverts)
     fn complex_get_vn1() {
@@ -71,7 +87,7 @@ mod tests {
 
         }
 
-        // Testing get_vn()
+        // Testing get_vn() with remove()
         for _ in 0..same_size {
             for v in 0..bg_same.size() { assert_eq!(v, bg_same.get_vn(v)); }
             bg_same.remove(0);
@@ -129,7 +145,7 @@ mod tests {
         for v in 0..u16_size { bg_u16.add(NoData); }
         for v in 0..u32_size { bg_u32.add(NoData); }
 
-        // Testing get_vn()
+        // Testing get_vn() with remove()
         for _ in 0..same_size {
             for v in 0..bg_same.size() { assert_eq!(v, bg_same.get_vn(v)); }
             bg_same.remove(0);
@@ -154,6 +170,66 @@ mod tests {
             for v in 0..bg_u32.size() { assert_eq!(v, bg_u32.get_vn(v)); }
             bg_u32.remove(0);
         }
+    }
+    
+    #[test]
+    fn human_evolution() {
+        const same_size: usize = 7;
+        // based on https://i.pinimg.com/originals/5e/35/19/5e35191ccc1d0d7c7f40009d358157b9.jpg 
+        let mut human_evol_tree: BitGraph<String> = BitGraph::new_with_capacity(EdgeScale::SAME, same_size);
+        
+        let habilis = "habilis";
+        let erectus = "erectus";
+        let heidelbergensis = "heidelbergensis";
+        let naledi = "naledi";
+        let neanderthal = "neanderthal"; 
+        let floresiensis  = "floresiensis";     
+        let sapiens = "sapiens";
+        
+        human_evol_tree.add(habilis.to_string()); // vertnum = 0
+        human_evol_tree.add(erectus.to_string()); // vertnum = 1
+        human_evol_tree.add(heidelbergensis.to_string()); // vertnum = 2
+        human_evol_tree.add(naledi.to_string()); // vertnum = 3
+        human_evol_tree.add(floresiensis.to_string()); // vertnum = 4
+        human_evol_tree.add(neanderthal.to_string()); // vertnum = 5 
+        human_evol_tree.add(sapiens.to_string()); // vertnum = 6
+
+        assert_eq!(human_evol_tree.size(), 7);
+        human_evol_tree.connect(0, 1, 0);
+        human_evol_tree.connect(0, 3, 0);
+        human_evol_tree.connect(1, 2, 0);
+        human_evol_tree.connect(1, 4, 0);
+        human_evol_tree.connect(2, 5, 0);
+        human_evol_tree.connect(2, 6, 0);
+        
+        // verifying connection...
+        assert_eq!(human_evol_tree.ev_num_at(0, 0), 0xa); // ...._1010
+        assert_eq!(human_evol_tree.ev_num_at(1, 0), 0x14); // ...._0001_0100
+        assert_eq!(human_evol_tree.ev_num_at(2, 0), 0x60); // ...._0110_0000
+        assert_eq!(human_evol_tree.ev_num_at(3, 0), 0x0); // ...._000
+        assert_eq!(human_evol_tree.ev_num_at(4, 0), 0x0); // ...._0000
+        assert_eq!(human_evol_tree.ev_num_at(5, 0), 0x0); // ...._0000   
+        assert_eq!(human_evol_tree.ev_num_at(6, 0), 0x0); // ...._0000
+
+        // another verification...
+        assert!(human_evol_tree.is_connected(0, 1));
+        assert!(human_evol_tree.is_connected(0, 3));
+        assert!(human_evol_tree.is_connected(1, 2));
+        assert!(human_evol_tree.is_connected(1, 4));
+        assert!(human_evol_tree.is_connected(2, 5));
+        assert!(human_evol_tree.is_connected(2, 6));
+        assert!(!human_evol_tree.is_connected(0, 2));
+        assert!(!human_evol_tree.is_connected(5, 6));
+        assert!(!human_evol_tree.is_connected(3, 4));
+
+        // GOING BACK IN TIME!!!
+        human_evol_tree.remove(6); // removing sapiens...
+        assert_eq!(human_evol_tree.ev_num_at(2, 0), 0x20); // ...._0010_0000
+        human_evol_tree.remove(5); // removing neanderthal...
+        assert_eq!(human_evol_tree.ev_num_at(2, 0), 0x0); // ...._0000_0000
+        assert_eq!(human_evol_tree.size(), 5);
+
+        human_evol_tree.remove(4)
     }
 
     #[test]
@@ -195,9 +271,6 @@ mod tests {
         bg_u8.connect(BITS / 16 - 1, (BITS / 4) - (BITS / 16) - 1, 127);
         bg_u16.connect(BITS / 32 - 1, (BITS / 8) - (BITS / 32) - 1, 32_767);
         bg_u32.connect(BITS / 64 - 1, (BITS / 16) - (BITS / 64) - 1, 2_147_483_647);
-
-          
-
     }
 
     #[test] // U8, U16, U32
@@ -958,46 +1031,4 @@ mod tests {
         let my_bg5: BitGraph<Vec::<i32>> = BitGraph::new_with_capacity(EdgeScale::U32, 100);
     }
 
-    /*
-    #[test]
-    fn test_itb8() {
-        let str1 = itb::int_to_bit8(&0);
-        assert_eq!("00000000", str1);
-        let str2 = itb::int_to_bit8(&0xff); // 255
-        assert_eq!("11111111", str2);
-        let str3 = itb::int_to_bit8(&127);
-        assert_eq!("01111111", str3);
-        let str4 = itb::int_to_bit8(&170);
-        assert_eq!("10101010", str4);
-    }
-    #[test]
-    fn test_itb16() {
-        let str1 = itb::int_to_bit16(&0);
-        assert_eq!("0000000000000000", str1);
-        let str2 = itb::int_to_bit16(&0xffff);
-        assert_eq!("1111111111111111", str2);
-    }
-    #[test]
-    fn test_itb32() {
-        let str1 = itb::int_to_bit32(&0);
-        assert_eq!("00000000000000000000000000000000", str1);
-        let str2 = itb::int_to_bit32(&0xffffffff);
-        assert_eq!("11111111111111111111111111111111", str2);
-    }
-    #[test]
-    fn test_itb64() {
-        let str1 = itb::int_to_bit64(&0);
-        assert_eq!
-        (
-            "0000000000000000000000000000000000000000000000000000000000000000",
-            str1
-        );
-        let str2 = itb::int_to_bit64(&0xffffffffffffffff);
-        assert_eq!
-        (
-            "1111111111111111111111111111111111111111111111111111111111111111",
-            str2
-        );
-    }
-    */
 }
