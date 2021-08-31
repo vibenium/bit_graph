@@ -66,16 +66,13 @@ pub mod bit_graph {
             self.edgevert[bitnum / vbi] |= vert_bit_pos | vert_weight_pos;
         }
 
-        pub fn disconnect_from(&mut self, bitnum: usize, vbi: usize, partition_size: usize) {
-            // defining bit region based on the 'partition_size'
-            // Example: U4 -> 0000 1111, BINARY -> 0000 0011, SAME -> 0000 0001
-            let m1: usize = usize::MAX >> ((vbi * partition_size) - partition_size);
-            // shifting bit-region (m1) to prepare the clearing of bits
-            let m2: usize = match partition_size { 
-                1 => m1 << bitnum,
-                _ => m1 << ((bitnum * partition_size) - partition_size),
-            };
-            // clearing shifted bit-region (m2)
+        pub fn disconnect_from(&mut self, bitnum: usize, vbi: usize, 
+                               partition_size: usize, bits: usize) {
+            // creating block size for removal
+            let m1: usize = usize::MAX >> (bits - partition_size);
+            // shifting block where the vertnum (and possibly wieght) exits
+            let m2: usize = m1 << ((bitnum * partition_size) % bits);
+            // flip m2 to preserve all bits except the region m2 occupies
             self.edgevert[bitnum / vbi] &= !m2; 
         }
 
@@ -122,11 +119,11 @@ pub mod bit_graph {
                 self.edgevert[ev_start] &= usize::MAX >> (bits - compd_vn_bit_pos);
                 // self.edgevert[ev_start] &= usize::MAX >> (bits - compd_vn_bit_pos);
                 // insert and shift saved data to edgevert
-                println!("saved_data_mask = {}", saved_data_mask);
+                
                 self.edgevert[ev_start] |= saved_data_mask >> partition_size;
             }
             if ev_start < ev_end {
-                println!("IM ALIVE");
+               
                 // The mask for acquiring bits from next edgevert
                 let m1: usize = usize::MAX >> (bits - partition_size);
                 // moving bits from next edgevert into the 'start' edgevert
@@ -176,7 +173,7 @@ pub mod bit_graph {
     // private auxiliary functions
     mod auxf {
         use crate::EdgeScale;
-
+        use crate::BitGraph;
         // checks if the amount of bits available is enough for a given EdgeScale
         // WARNING: THIS HAS NOT BEEN rigorously tested...
         pub fn verify_partition_size(scale: &EdgeScale, bits: &usize) {
@@ -201,11 +198,38 @@ pub mod bit_graph {
                 }
             }
         }
+        // Helper for type_connect and type_disconnect
+        pub fn find_src_dest_idx<T: std::clone::Clone + std::cmp::PartialEq>
+            (graph: &mut BitGraph<T>, source: &T, dest: &T) -> [(bool, usize); 2] {
+            // return example: [(false, 0), (true, 1)]
+            
+            let len: usize = graph.vertices.len();
+            let mut found_source: bool = false;
+            let mut found_dest: bool = false;
+            let mut source_idx: usize = 0;
+            let mut dest_idx: usize = 0;
+            let mut _v: usize = 0;
 
+            // look and assign...
+            while (!found_source || !found_dest) && _v < len {
+                if !found_source && *source == graph.vertices[_v].get_vert_data() {
+                    found_source = true;
+                    source_idx = _v;
+                }
+                if !found_dest && *dest == graph.vertices[_v].get_vert_data() {
+                    found_dest = true;
+                    dest_idx = _v;
+                }
+                _v += 1; 
+            }
+            // return ...
+            [(found_source, source_idx), (found_dest, dest_idx)]
+        }
+ 
 
     }
     
-    impl<T> BitGraph<T> { 
+    impl<T : std::cmp::PartialEq + std::clone::Clone> BitGraph<T> { 
 
         // Creates new BitGraph with no vertices
         pub fn new(scale: EdgeScale) -> BitGraph<T> {
@@ -408,7 +432,35 @@ pub mod bit_graph {
 
         pub fn disconnect(&mut self, source: usize, dest: usize) {
             auxf::check_bounds(&source, &dest, self.vertices.len());            
-            self.vertices[source].disconnect_from(dest, self.vert_bit_indexing, self.partition);
+            self.vertices[source].disconnect_from(dest, self.vert_bit_indexing, 
+                                                  self.partition, self.bits);
+        }
+
+        // Connect by type. Runtime: Worst=O(n); Best=O(1)
+        pub fn type_connect(&mut self, source: &T, dest: &T, weight: usize) {
+            // [(found_source, source_idx), (found_dest, dest_idx)]
+            let result: [(bool, usize); 2] = auxf::find_src_dest_idx(self, source, dest);
+            if result[0].0 && result[1].0 {
+                self.vertices[result[0].1].connect_to(result[1].1, weight, 
+                                                      self.vert_bit_indexing, 
+                                                      self.partition);
+            } else {
+                panic!("ERROR in type_connect: invalid source or destination");
+            }
+        } 
+
+        // Disconnect by type Runtime: Worst=O(n); Best=O(1)
+        pub fn type_disconnect(&mut self, source: &T, dest: &T) { 
+            // [(found_source, source_idx), (found_dest, dest_idx)]
+            let result: [(bool, usize); 2] = auxf::find_src_dest_idx(self, source, dest);
+            if result[0].0 && result[1].0 {
+                self.vertices[result[0].1].disconnect_from(result[1].1, 
+                                                           self.vert_bit_indexing, 
+                                                           self.partition, self.bits);
+            } else {
+                panic!("ERROR in type_connect: invalid source or destination");
+            }
+            
         }
 
         pub fn ev_num_at(&self, vert_idx: usize, ev_idx: usize) -> usize { 
@@ -468,6 +520,32 @@ pub mod bit_graph {
                 }
             }
            
+        }
+        // ROUGH IDEA... NOT BEING TESTED
+        pub fn type_remove(&mut self, data: &T) {
+            
+            let len: usize = self.vertices.len();
+            let mut found_data: bool = false;
+            let mut vertex: usize = 0;
+
+            // Search for data
+            while !found_data && vertex < len {
+                if self.vertices[vertex].get_vert_data() == *data {
+                    found_data = true;
+                } else { // captures the data index
+                    vertex += 1;
+                }
+            }
+
+            if found_data { // Proceed with removal of 'vertex'
+                for v in vertex..len {
+                   self.vertices[v].dec_vn();
+                   self.vertices[v].shift_after_vertex(vertex, self.partition, self.bits);
+                }
+                self.vertices.remove(vertex);
+            } else {
+                panic!("ERROR in type_remove: data does not exist");
+            }
         }
     }
 

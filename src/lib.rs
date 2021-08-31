@@ -20,10 +20,58 @@ mod tests {
 
     use super::*;
 
-    #[derive(Clone)]
+    #[derive(PartialEq, Clone)]
     struct NoData;
 
     const BITS: usize = std::mem::size_of::<usize>() * 8;
+
+    #[test]
+    fn simple_type_remove1() {
+    
+    }
+
+    #[test] // FAILS for unknown reason(s)...
+    fn simple_type_connect1() {
+        let mut i8_graph: BitGraph<i8> = BitGraph::new_with_capacity(EdgeScale::U8, 2);
+        let num1: i8 = 20;
+        let num2: i8 = 4;
+        i8_graph.add(num1);
+        i8_graph.add(num2);
+
+        // sanity check
+        assert_eq!(i8_graph.get_data(0), 20);
+        assert_eq!(i8_graph.get_data(1), 4);
+        
+        i8_graph.type_connect(&num1, &num2, 7);
+        
+        let mut street_graph: BitGraph<String> = BitGraph::new_with_capacity(EdgeScale::U8, 2);
+        let street1 = String::from("Main st.");
+        let street2 = String::from("Elm st.");
+        street_graph.add(street1.clone());
+        street_graph.add(street2.clone());
+        
+        street_graph.type_connect(&street1, &street2, 7); 
+        assert!(street_graph.is_connected(0, 1));
+   }
+
+    #[test]
+    fn simple_type_disconnect1() {
+        #[derive(Clone, PartialEq)]
+        struct Car<'a> {
+            year: u16,
+            model: &'a str,
+        }
+        let mut dealership: BitGraph<Car> = BitGraph::new_with_capacity(EdgeScale::U16, 2);
+        let ford1: Car = Car{year: 2012, model: "Ford Focus"};
+        let ford2: Car = Car{year: 2014, model: "Ford Focus"};
+        dealership.add(ford1.clone());
+        dealership.add(ford2.clone());
+        dealership.type_connect(&ford1, &ford2, 5_000);
+
+        assert!(dealership.is_connected(0, 1));
+        dealership.type_disconnect(&ford1, &ford2);
+        assert!(!dealership.is_connected(0, 1));
+    }
 
     #[test]
     fn simple_get_data1() {
@@ -684,6 +732,17 @@ mod tests {
         assert_eq!(10, bg_same.size());
         bg_same.add_copies(NoData, 10);
         assert_eq!(20, bg_same.size());
+    }
+
+    #[test]
+    fn simple_disconnect2() {
+        let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, 2);
+        bg_u16.add(NoData);
+        bg_u16.add(NoData);
+        bg_u16.connect(0, 1, 10_000);
+        assert!(bg_u16.is_connected(0, 1));
+        bg_u16.disconnect(0, 1);
+        assert!(!bg_u16.is_connected(0, 1));
     }
 
     #[test]
