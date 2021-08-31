@@ -735,6 +735,22 @@ mod tests {
     }
 
     #[test]
+    fn complex_disconnect1() {
+        let mut bg_u32: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U32, 4);
+        for _ in 0..4 { bg_u32.add(NoData); }
+        bg_u32.connect(0, 2, 1_000_000);
+        bg_u32.connect(1, 3, 2_000_000);
+        for v in 0..4 { assert_eq!(bg_u32.ev_len_at(v), BITS / 32); }
+        assert!(bg_u32.is_connected(0, 2));
+        bg_u32.disconnect(0, 2); 
+        assert!(!bg_u32.is_connected(0, 2));
+        assert!(bg_u32.is_connected(1, 3));
+        bg_u32.disconnect(1, 3);
+        assert!(!bg_u32.is_connected(1, 3));
+
+    }
+
+    #[test]
     fn simple_disconnect2() {
         let mut bg_u16: BitGraph<NoData> = BitGraph::new_with_capacity(EdgeScale::U16, 2);
         bg_u16.add(NoData);
