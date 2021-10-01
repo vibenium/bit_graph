@@ -343,6 +343,48 @@ pub mod bit_graph {
             }
         }
 
+        /// Create a new BitGraph<T> with existing data
+        pub fn initialize(scale: EdgeScale, d: &[T]) 
+            -> BitGraph<T> where T: Clone {
+
+            let len: usize = d.len();
+            let mut verts: Vec<Vertex<T>> = Vec::<Vertex<T>>::with_capacity(len); 
+            
+            let b = std::mem::size_of::<usize>() * 8;
+            auxf::verify_partition_size(&scale, &b);
+            
+            // initialize BitGraph meta data
+            // (vert_bit_indexing, max_weight, partition)
+            let (vbi, mw, p): (usize, usize, usize) = match scale {
+                EdgeScale::SAME => (b / 1, 0, 1),
+                EdgeScale::BINARY => (b / 2, 1, 2),
+                EdgeScale::U4 => (b / 4, 7, 4),
+                EdgeScale::U8 => (b / 8, 127, 8),
+                EdgeScale::U16 => (b / 16, 32_767, 16),
+                EdgeScale::U32 => (b / 32, 2_147_483_647, 32),
+            }; 
+            let edgevert_len: usize = (len * p) / b + 1; 
+            // Initializiazing all Vertex<T> info...
+            for v in 0..len {
+                verts.push(
+                    Vertex {
+                        data: d[v].clone(),
+                        vertnum: v,
+                        edgevert: vec![0; edgevert_len], // fill with 0's
+                    }
+                );
+            }
+            // Return the new BitGraph
+            BitGraph {
+                vertices: verts,
+                vert_bit_indexing: vbi,
+                max_weight: mw,
+                partition: p,
+                bits: b,
+            }
+            
+        }
+
         pub fn get_data(&self, vert_idx: usize) -> T
         where
             T: Clone,

@@ -26,7 +26,28 @@ mod tests {
     const BITS: usize = std::mem::size_of::<usize>() * 8;
 
     #[test]
-    fn simple_type_remove1() {}
+    fn simple_initialize2() { // tests passing in directly
+        let data = &[String::from("Hi"), String::from("there")];
+        let bg_same: BitGraph<String> 
+            = BitGraph::initialize(EdgeScale::SAME, data);
+        assert_eq!(2, bg_same.size());
+        assert_eq!(1, bg_same.ev_len_at(0));
+        assert_eq!(1, bg_same.ev_len_at(1)); 
+        println!("{}", data[0]);
+    }
+    
+    #[test]
+    fn simple_initialize1() { // tests passing in directly
+        let bg_same: BitGraph<String> = BitGraph::initialize(EdgeScale::SAME,
+                &[String::from("Hi"), String::from("there")]
+            );
+        assert_eq!(2, bg_same.size());
+        assert_eq!(1, bg_same.ev_len_at(0));
+        assert_eq!(1, bg_same.ev_len_at(1)); 
+    }
+
+    #[test]
+    fn simple_type_remove1() { unimplemented!(); }
 
     #[test] // FAILS for unknown reason(s)...
     fn simple_type_connect1() {
