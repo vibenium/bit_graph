@@ -18,7 +18,7 @@ pub mod bit_graph {
         
         /// returns data of the vertex
         pub fn get_vert_data(&self) -> T where  T: Clone, {
-            self.data.clone()
+            self.data.clone()++
         }
         /// used when more edgeverts are needed to initialize potential connections
         pub fn push_new_ev(&mut self) {

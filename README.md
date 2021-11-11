@@ -45,3 +45,9 @@ pub struct BitGraph<T> {
 * `vert_bit_indexing`: The machines bits divided by `partition`. Used for indexing the vertex bit position in any given `Vertex<T>`'s `edgevert` vector. This is primarily used to keep the bit position of the vertex within a its range of bits. For instance, in binary, `SAME` = 1, `BINARY` = 10, `U4` = 1000, `U8` = 10000000, etc. Every _1_ is where the `vert_bit_indexing` (or `vbi` for short) lies within every `edgevert`. 
 * `max_weight`: The maximum weight of any vertex within the constructed `BitGraph<T>`. This number is useful for checking if a given weight is within the specified range (which is completely dependent on the chosen `EdgeScale`).
 * `partition`: The amount of bits occupied for the `vbi` and the weight for a single representation of a connection from the `vertnum` vertex to the destination `vertnum` (i.e., using the array analogy from the intro of thisREADME, the connection of the array indices encoded in a few numbers, A.K.A, `edgevert`).
+
+# Pros and Cons
+  __Pros__:
+  	#1 Space Efficiency => All vertex and weight info is stored into single numbers
+	#2 Fast (dis)connections => Uses bitwise operators to encode vertex/weight info
+	#3 BitGraph + HashMap => Making index identifying easier (explained later)

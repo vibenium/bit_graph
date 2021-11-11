@@ -46,8 +46,18 @@ mod tests {
         assert_eq!(1, bg_same.ev_len_at(1)); 
     }
 
-    #[test]
-    fn simple_type_remove1() { unimplemented!(); }
+    #[test] 
+    fn simple_type_remove1() { 
+        // Current implimentation is very inefficient
+        // Also, the type for what to remove is debatable
+        let mut bg_u4: BitGraph<String> = 
+            BitGraph::initialize(EdgeScale::U4, 
+                                 &[String::from("Hello"), String::from("Goodbye")]); 
+        bg_u4.connect(0, 1, 7);
+        bg_u4.type_remove(&"Goodbye".to_string());
+        assert_eq!(1, bg_u4.size());
+        assert_eq!(bg_u4.ev_num_at(0, 0), 0);
+    }
 
     #[test] // FAILS for unknown reason(s)...
     fn simple_type_connect1() {
